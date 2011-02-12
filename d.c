@@ -2,7 +2,8 @@
 /* This file is a part of Molybdenum project */
 
 #define _XOPEN_SOURCE 600
-
+#define _GNU_SOURCE
+#include <search.h>
 #include "f.h"
 #include "d.h"
 
@@ -35,7 +36,6 @@ int dir_t_resize(dir_t *ps_dir, size_t i_new_capacity)
 	if (ps_dir->amount > i_new_capacity)  ps_dir->amount = i_new_capacity ;
 	return(0);
 }
-
 
 
 int dir_t_reset(dir_t *ps_dir)
@@ -606,9 +606,78 @@ dir_t * dir_t_scan_filter(char *dir_name, dfilter_t * ps_filter)
 }
 
 
-
 /* Rescan the directory IF the directory changed */
 int dir_t_refresh(dir_t * ps_dir)
 {
 	return(0);
+}
+
+/* This function finds difference between dir_a and dir_b*/
+/* It returns structure with list of files of dir_b that doesn't present in dir_a */
+/* Actually it says what you need to copy from B to A */
+dir_t  * dir_t_find_shortage(dir_t * sp_a, dir_t * sp_b)
+{
+    struct hsearch_data * htab = calloc(1, sizeof(struct hsearch_data));
+    ENTRY e;
+    ENTRY *ep = NULL;
+
+    dir_t * sp_result =     NULL;
+    que_t * ps_q =          NULL;
+    entry_t * ps_entry =   NULL;
+    int i;
+
+    if( 0 == hcreate_r( (sp_a->amount * 2),   htab))  return(NULL);
+
+    for(i = 0 ; i<sp_a->amount ; i++)
+    {
+        e.key = sp_a->entry[i].name;
+        e.data = (void *) &sp_a->entry[i];
+        hsearch_r(e, ENTER, &ep, htab);
+
+        if (!ep)
+        {
+            printf("Creation of hash table fell\n");
+            hdestroy_r(htab);
+            return(NULL);
+        }
+    }
+
+    ps_q = que_create();
+    if(!ps_q)
+    {
+        printf("Can't allocate memory for que\n");
+        hdestroy_r(htab);
+        return(NULL);
+    }
+
+
+    /* Now search in the hash  */
+    for(i = 0 ; i < sp_b->amount; i++)
+    {
+        e.key = sp_b->entry[i].name;
+        hsearch_r(e, FIND, &ep, htab);
+        if (!ep)
+            que_add_data(ps_q, (char *) &sp_b->entry[i]);
+    }
+    hdestroy_r(htab);
+    printf("que: %d\n", ps_q->amount);
+
+    if(ps_q->amount > 0)
+    {
+        sp_result =  dir_t_create_empty();
+        dir_t_allocate_entry(sp_result, ps_q->amount);
+        sp_result->amount = ps_q->amount;
+        while(ps_q->amount > 0)
+        {
+            ps_entry = (entry_t *) node_extract_data(ps_q);
+            if(!ps_entry)
+            {
+                break;
+            }
+            printf("inserting: %s\n", ps_entry->name);
+            memcpy((char *) &sp_result->entry[sp_result->amount ],  (char *) ps_entry, sizeof(entry_t));
+        }
+    }   
+    
+    return(sp_result);
 }

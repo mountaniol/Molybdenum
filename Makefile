@@ -1,6 +1,6 @@
 GCC=gcc
 AR=ar
-CFLAGS=-s -Wall -O3 -g3
+CFLAGS=-Wall -O3 -g3
 #CFLAGS=-O3 -Wall
 
 MOLY_O=l.o d.o f.o dw.o
@@ -15,7 +15,7 @@ m: $(MOLY_O)
 	$(AR) -q $(MOLY_A) $(MOLY_O)
 
 test: m test.o
-	gcc -Wall $(CFLAGS) test.o $(MOLY_A) -o test.out -lpthread
+	gcc $(CFLAGS) test.o $(MOLY_A) -o test.out -lpthread
 
 
 %.o:%.c

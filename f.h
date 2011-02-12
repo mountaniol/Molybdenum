@@ -2,9 +2,9 @@
 #define _filter_h_shgdfasdhfgasdkhfgasdhjgyt876876876876
 
 /* Vsevolod Mountaniol, 2011, GPL */
-/* This dile is a part of Molybdenum project */
-/* Filter: here defined structure of filter, used to define search on directory */
+/* This file is a part of Molybdenum project */
 
+/* Filter: here defined structure of filter, used to define search on directory */
 
 /* The idea of filter: user can create as many filters as he wants */
 /* The filters added to filters' chain */

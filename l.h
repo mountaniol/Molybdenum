@@ -1,6 +1,9 @@
 #ifndef __KJHjhdkjhLKJHKJHkjhlk
 #define __KJHjhdkjhLKJHKJHkjhlk
 
+/* Vsevolod Mountaniol, 2011, GPL */
+/* This file is a part of Molybdenum project */
+
 #include <stdio.h>
 
 struct node_struct

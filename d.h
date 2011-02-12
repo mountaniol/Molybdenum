@@ -19,7 +19,7 @@
 #define DIR_TYPE_FILE 8
 #define DIR_TYPE_DIR 4
 
-struct entry
+struct entry_struct
 {
 	char 	name[FILENAME_MAX]; /* Name of file without path */
 	short 	len;				/* Len of file name */
@@ -27,7 +27,7 @@ struct entry
 	struct 	stat s_st;			/* struct stat */
 };
 
-typedef struct entry entry_t;
+typedef struct entry_struct entry_t;
 
 struct dir_filter;
 
@@ -86,5 +86,6 @@ dir_t * dir_t_scan_filter(char *dir_name, struct dir_filter * ps_filter);
 
 int 	dir_t_del_dfilter(dir_t * ps_dir);
 int 	dir_t_add_dfilter(dir_t * ps_dir, struct dir_filter * ps_f);
+dir_t  * dir_t_find_shortage(dir_t * sp_a, dir_t * sp_b);
 
 #endif /* __sdflkjfsdflkHKHLKJHLKJhkjhkjh6876876876 */
