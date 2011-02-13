@@ -4,6 +4,7 @@
 /* Vsevolod Mountaniol, 2011, GPL */
 /* This file is a part of Molybdenum project */
 
+#include "obj.h"
 #include "d.h"
 
 /* Ticket: I try to protect the structure */
@@ -19,6 +20,7 @@
 
 struct dir_t_holder
 {
+	obj_t t;
 	dir_t *			ps_dir;			/* The dir_t struct */
 	struct stat		stat;			/* Last known stat of the directory */
 	time_t 			t_next_run;		/* When it should be checked next time */
@@ -29,6 +31,7 @@ typedef struct dir_t_holder dholder_t;
 
 struct dir_t_watcher
 {
+	obj_t t;
 	pthread_t 			pid_watch;				/* pid of watcher thread */
 	pthread_t 			pid_rescan;				/* pid of rescan  thread */
 

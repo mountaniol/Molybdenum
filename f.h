@@ -49,8 +49,8 @@ typedef enum efilter_file_type
 
 struct dir_filter
 {
+	obj_t t;
 	struct dir_filter * next;
-
 	efilter_t e_ftype;	/* Type of the filter */
 	char * pc_data;		/* Pointer to data, the data depends on e_ftype. So for FILTER_NAME it expect to find there char*, but for FILTER_SIZE - off_t / off64_t */
 };
