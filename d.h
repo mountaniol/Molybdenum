@@ -13,6 +13,7 @@
 #include <pthread.h>
 #include <dirent.h>
 
+#include "obj.h"
 #include "l.h"
 
 #define DIR_T_RECORDS 4096
@@ -21,6 +22,7 @@
 
 struct entry_struct
 {
+	obj_t t;
 	char 	name[FILENAME_MAX]; /* Name of file without path */
 	short 	len;				/* Len of file name */
 	char 	type;				/* Type of the file. Unused for the moment */
@@ -36,6 +38,7 @@ struct dir_filter;
 
 struct directory
 {
+	obj_t t;
 	int 				ticket;								/* Used in watch */
 	int 				amount;								/* Amount of files in the dir_t: it not REAL size of array, it is number of entries in array */
 	char 				dir[FILENAME_MAX];					/* Directory name */
@@ -86,6 +89,6 @@ dir_t * dir_t_scan_filter(char *dir_name, struct dir_filter * ps_filter);
 
 int 	dir_t_del_dfilter(dir_t * ps_dir);
 int 	dir_t_add_dfilter(dir_t * ps_dir, struct dir_filter * ps_f);
-dir_t  * dir_t_find_shortage(dir_t * sp_a, dir_t * sp_b);
+dir_t  * dir_t_diff(dir_t * sp_a, dir_t * sp_b);
 
 #endif /* __sdflkjfsdflkHKHLKJHLKJhkjhkjh6876876876 */
