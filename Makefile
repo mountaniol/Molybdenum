@@ -3,7 +3,7 @@ AR=ar
 CFLAGS=-Wall -O3 -g3
 #CFLAGS=-O3 -Wall
 
-MOLY_O=l.o d.o f.o dw.o
+MOLY_O=l.o d.o f.o dw.o obj.o
 MOLY_A=molybdenum.a
 
 all: clean m 
