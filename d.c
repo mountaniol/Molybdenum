@@ -83,7 +83,7 @@ int dir_t_shrink(dir_t *ps_dir, size_t i_new_size)
 
 dir_t * dir_t_create_empty(void)
 {
-	dir_t *d = calloc(sizeof(dir_t), 1);
+	dir_t *d = calloc(1, sizeof(dir_t));
 	if (!d)	return(NULL);
 	pthread_mutex_init(&d->lock, NULL);
 	return(d);
@@ -615,7 +615,8 @@ int dir_t_refresh(dir_t * ps_dir)
 /* This function finds difference between dir_a and dir_b*/
 /* It returns structure with list of files of dir_b that doesn't present in dir_a */
 /* Actually it says what you need to copy from B to A */
-dir_t  * dir_t_find_shortage(dir_t * sp_a, dir_t * sp_b)
+
+dir_t  * dir_t_diff(dir_t * sp_a, dir_t * sp_b)
 {
     struct hsearch_data * htab = calloc(1, sizeof(struct hsearch_data));
     ENTRY e;
@@ -623,10 +624,14 @@ dir_t  * dir_t_find_shortage(dir_t * sp_a, dir_t * sp_b)
 
     dir_t * sp_result =     NULL;
     que_t * ps_q =          NULL;
-    entry_t * ps_entry =   NULL;
+    entry_t * ps_entry =   	NULL;
     int i;
 
-    if( 0 == hcreate_r( (sp_a->amount * 2),   htab))  return(NULL);
+    if( 0 == hcreate_r( (sp_a->amount * 2),   htab))  
+	{
+		free(htab);
+		return(NULL);
+	}
 
     for(i = 0 ; i<sp_a->amount ; i++)
     {
@@ -638,6 +643,7 @@ dir_t  * dir_t_find_shortage(dir_t * sp_a, dir_t * sp_b)
         {
             printf("Creation of hash table fell\n");
             hdestroy_r(htab);
+			free(htab);
             return(NULL);
         }
     }
@@ -647,6 +653,7 @@ dir_t  * dir_t_find_shortage(dir_t * sp_a, dir_t * sp_b)
     {
         printf("Can't allocate memory for que\n");
         hdestroy_r(htab);
+		free(htab);
         return(NULL);
     }
 
@@ -659,25 +666,104 @@ dir_t  * dir_t_find_shortage(dir_t * sp_a, dir_t * sp_b)
         if (!ep)
             que_add_data(ps_q, (char *) &sp_b->entry[i]);
     }
+
     hdestroy_r(htab);
-    printf("que: %d\n", ps_q->amount);
+	free(htab);
 
     if(ps_q->amount > 0)
     {
         sp_result =  dir_t_create_empty();
         dir_t_allocate_entry(sp_result, ps_q->amount);
-        sp_result->amount = ps_q->amount;
+
+		sp_result->amount = 0;
+
         while(ps_q->amount > 0)
         {
             ps_entry = (entry_t *) node_extract_data(ps_q);
-            if(!ps_entry)
-            {
-                break;
-            }
-            printf("inserting: %s\n", ps_entry->name);
-            memcpy((char *) &sp_result->entry[sp_result->amount ],  (char *) ps_entry, sizeof(entry_t));
+            if(!ps_entry)  break;
+            memcpy((char *) &sp_result->entry[sp_result->amount++],  (char *) ps_entry, sizeof(entry_t));
         }
     }   
     
+	que_destroy(ps_q);
     return(sp_result);
 }
+
+
+
+
+/* This function finds files with same names in dir_a and dir_b*/
+dir_t  * dir_t_same(dir_t * sp_a, dir_t * sp_b)
+{
+    struct hsearch_data * htab = calloc(1, sizeof(struct hsearch_data));
+    ENTRY e;
+    ENTRY *ep = NULL;
+
+    dir_t * sp_result =     NULL;
+    que_t * ps_q =          NULL;
+    entry_t * ps_entry =   	NULL;
+    int i;
+
+    if( 0 == hcreate_r( (sp_a->amount * 2),   htab))  
+	{
+		free(htab);
+		return(NULL);
+	}
+
+    for(i = 0 ; i<sp_a->amount ; i++)
+    {
+        e.key = sp_a->entry[i].name;
+        e.data = (void *) &sp_a->entry[i];
+        hsearch_r(e, ENTER, &ep, htab);
+
+        if (!ep)
+        {
+            printf("Creation of hash table fell\n");
+            hdestroy_r(htab);
+			free(htab);
+            return(NULL);
+        }
+    }
+
+    ps_q = que_create();
+    if(!ps_q)
+    {
+        printf("Can't allocate memory for que\n");
+        hdestroy_r(htab);
+		free(htab);
+        return(NULL);
+    }
+
+
+    /* Now search in the hash  */
+    for(i = 0 ; i < sp_b->amount; i++)
+    {
+        e.key = sp_b->entry[i].name;
+        hsearch_r(e, FIND, &ep, htab);
+        if (ep)
+            que_add_data(ps_q, (char *) &sp_b->entry[i]);
+    }
+
+    hdestroy_r(htab);
+	free(htab);
+
+    if(ps_q->amount > 0)
+    {
+        sp_result =  dir_t_create_empty();
+        dir_t_allocate_entry(sp_result, ps_q->amount);
+
+		sp_result->amount = 0;
+
+        while(ps_q->amount > 0)
+        {
+            ps_entry = (entry_t *) node_extract_data(ps_q);
+            if(!ps_entry)  break;
+            memcpy((char *) &sp_result->entry[sp_result->amount++],  (char *) ps_entry, sizeof(entry_t));
+        }
+    }   
+    
+	que_destroy(ps_q);
+    return(sp_result);
+}
+
+
