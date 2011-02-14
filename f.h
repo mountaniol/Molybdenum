@@ -58,6 +58,7 @@ struct dir_filter
 typedef struct dir_filter dfilter_t;
 
 dfilter_t * dfilter_create(void);
+dfilter_t * dfilter_dup(dfilter_t * ps_f_src);
 int 		dfilter_destroy(dfilter_t * sp_filter);
 dfilter_t * dfilter_create_with_params(efilter_t e, char * pc_data);
 int 		dfilter_add_data(dfilter_t * sp_f, char * pc_data);

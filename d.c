@@ -53,7 +53,6 @@ int dir_t_reset(dir_t *ps_dir)
 int dir_t_amount(dir_t *ps_dir)
 {
 	if (ps_dir)	return(ps_dir->amount);
-
 	return(0);
 }
 
@@ -85,6 +84,9 @@ dir_t * dir_t_create_empty(void)
 {
 	dir_t *d = calloc(1, sizeof(dir_t));
 	if (!d)	return(NULL);
+
+	/* Type definition */
+	obj_init(&d->t, OBJ_TYPE_DIR);
 	pthread_mutex_init(&d->lock, NULL);
 	return(d);
 }
@@ -767,3 +769,101 @@ dir_t  * dir_t_same(dir_t * sp_a, dir_t * sp_b)
 }
 
 
+
+/* dir_t duplication */
+obj_t * obj_copy_dir_t(obj_t * ps_o)
+{
+	int i;
+	dir_t * ps_dir_s = (dir_t *) ps_o;
+	dir_t * ps_dir_d = NULL;
+
+	if(obj_type_validity(ps_o, OBJ_TYPE_DIR)) return(NULL);
+
+	ps_dir_d = dir_t_create_empty();
+	if (!ps_dir_d) return(NULL);
+	if (ps_dir_s->amount) 
+	{	
+		i = dir_t_allocate_entry(ps_dir_d, ps_dir_s->amount);
+		if (i) goto obj_copy_dir_error;
+	}
+
+	memcpy(ps_dir_d->entry, ps_dir_s->entry, sizeof(entry_t) * ps_dir_s->amount);
+	memcpy(ps_dir_d->dir, ps_dir_s->dir, FILENAME_MAX);
+	
+	ps_dir_d->amount = ps_dir_s->amount;
+	ps_dir_d->entry_allocated = ps_dir_s->amount;
+
+	if(ps_dir_s->filter) 
+	{	
+		ps_dir_d->filter = (dfilter_t *) obj_dup( (obj_t * ) ps_dir_s->filter);
+		if(!ps_dir_d->filter) goto obj_copy_dir_error;
+	}
+	
+	ps_dir_d->flags = ps_dir_s->flags;
+	ps_dir_d->interval = ps_dir_s->interval;
+	memcpy(&ps_dir_d->stat, &ps_dir_s->stat, sizeof(struct stat));
+	ps_dir_d->ticket = ps_dir_s->ticket;
+
+	return( (obj_t * ) ps_dir_d );
+
+obj_copy_dir_error:
+	if(ps_dir_d) dir_t_free(ps_dir_d);
+	return(NULL);
+}
+
+
+/********************************************************/
+/* Interface for obj_t abstraction */
+/********************************************************/
+
+
+int obj_dir_t_free(obj_t * ps_o)
+{
+	return(dir_t_free((dir_t *) ps_o) );
+}
+
+
+obj_e obj_dir_t_init(obj_t * ps_o)
+{
+	if(dir_t_reset((dir_t *) ps_o) )
+		return(OBJ_E_MEMORY);
+	return(OBJ_E_OK);
+}
+
+int obj_dir_t_lock(obj_t * ps_o)
+{
+	dir_t * ps_d = (dir_t *) (ps_o);
+	return pthread_mutex_lock(&ps_d->lock);
+}
+
+int obj_dir_t_unlock(obj_t * ps_o)
+{
+	dir_t * ps_d = (dir_t *) (ps_o);
+	return pthread_mutex_unlock(&ps_d->lock);
+}
+
+obj_t * obj_dir_t_new(void * blabla)
+{
+	return ((obj_t *)dir_t_create_empty());
+}
+
+int obj_dir_t_valid(obj_t * ps_o)
+{
+	if (ps_o->type == OBJ_TYPE_DIR) return(OBJ_E_OK);
+	return(OBJ_E_TYPE);
+}
+
+void obj_dir_init_me()
+{
+	obj_f * pf = calloc(1, sizeof(obj_f));
+	pf->obj_dup = obj_copy_dir_t;
+	pf->obj_free = obj_dir_t_free;
+	pf->obj_init = obj_dir_t_init;
+	pf->obj_lock = obj_dir_t_lock;
+	pf->obj_unlock = obj_dir_t_unlock;
+	pf->obj_new = obj_dir_t_new;
+	pf->obj_next = NULL;
+	pf->obj_valid = obj_dir_t_valid;
+
+	obj_f_install(OBJ_TYPE_DIR, pf);
+}

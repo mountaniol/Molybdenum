@@ -90,5 +90,8 @@ dir_t * dir_t_scan_filter(char *dir_name, struct dir_filter * ps_filter);
 int 	dir_t_del_dfilter(dir_t * ps_dir);
 int 	dir_t_add_dfilter(dir_t * ps_dir, struct dir_filter * ps_f);
 dir_t  * dir_t_diff(dir_t * sp_a, dir_t * sp_b);
+dir_t  * dir_t_same(dir_t * sp_a, dir_t * sp_b);
 
+
+void obj_dir_init_me();
 #endif /* __sdflkjfsdflkHKHLKJHLKJhkjhkjh6876876876 */

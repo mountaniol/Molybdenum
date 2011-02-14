@@ -5,6 +5,8 @@
 /* This file is a part of Molybdenum project */
 
 #include <stdio.h>
+#include <pthread.h>
+
 #include "obj.h"
 
 struct node_struct
@@ -23,6 +25,7 @@ struct que_struct
 	int         amount;
 	node_t *    list;
 	node_t *    tail;
+	pthread_mutex_t lock;
 };
 
 typedef struct que_struct que_t;

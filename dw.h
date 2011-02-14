@@ -50,11 +50,17 @@ struct dir_t_watcher
 
 typedef struct dir_t_watcher dwatch_t;
 
-
 dwatch_t * dwatch_create(void);
+int dwatch_destroy(dwatch_t * sp_w);
 int dwatch_start(dwatch_t * ps_w);
 int dwatch_stop(dwatch_t * ps_w);
 int dwatch_dir(dwatch_t *ps_w, dir_t * ps_d);
+
+dholder_t * dholder_new();
+int dholder_free(dholder_t * ps_holder);
+int dholder_set_dir_t(dholder_t * ps_h,  dir_t * ps_dir);
+dholder_t * dholder_new_from_dir_t(dir_t * ps_d);
+
 
 #endif /* _dir_t_watch_zdfhsdfjkhsdfjasdj987987 */
 

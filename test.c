@@ -13,8 +13,10 @@ int main()
     int i;
     dwatch_t * ps_w ; // = dwatch_create();
 
-    sp_a = dir_t_scan2("/home/vitaly/src/cmd/splitter");
-    sp_b = dir_t_scan2("/home/vitaly/src/cmd/splitter.orig");
+	obj_t * po_filter = obj_new(OBJ_TYPE_FILTER, NULL);
+
+    sp_a =  dir_t_scan2("/home/vitaly/src/cmd/splitter");
+    sp_b =  dir_t_scan2("/home/vitaly/src/cmd/splitter.orig");
 
     if (!sp_a || !sp_b)	return(-1);
 
@@ -41,7 +43,9 @@ int main()
 		printf("%i: %s\n", i, sp_result->entry[i].name);
 
 
-	dir_t_free(sp_result);
+	//dir_t_free(sp_result);
+	obj_free(sp_result);
+	obj_free(po_filter);
 	dir_t_free(sp_a);
 	dir_t_free(sp_b);
 

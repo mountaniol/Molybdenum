@@ -77,6 +77,8 @@ dwatch_t * dwatch_create(void)
 
 	if(!sp_w) return(NULL);
 
+	obj_init(&sp_w->t, OBJ_TYPE_WATCHER);
+
 	pthread_mutex_init(&sp_w->lock, NULL);
 	pthread_mutex_init(&sp_w->q_changed_lock, NULL);
 	pthread_mutex_init(&sp_w->q_rescan_lock, NULL);
@@ -116,6 +118,38 @@ error_que:
 }
 
 
+
+int dwatch_destroy(dwatch_t * sp_w)
+{
+	if (!sp_w) return(-1);
+
+	CLN_BIT(sp_w->status, WATCHER_STATUS_RUN_BIT);
+
+	pthread_mutex_lock(&sp_w->lock);
+	pthread_mutex_lock(&sp_w->q_changed_lock);
+	pthread_mutex_lock(&sp_w->q_rescan_lock);
+	pthread_mutex_lock(&sp_w->q_watch_lock);
+
+	if(sp_w->pid_watch > 0)  pthread_cancel(sp_w->pid_watch);
+	if(sp_w->pid_rescan > 0) pthread_cancel(sp_w->pid_rescan);
+
+	if (sp_w->q_watch) 		que_destroy(sp_w->q_watch);
+	if (sp_w->q_rescan) 	que_destroy(sp_w->q_rescan);
+	if (sp_w->q_changed) 	que_destroy(sp_w->q_changed);
+
+	pthread_mutex_destroy(&sp_w->q_changed_lock);
+	pthread_mutex_destroy(&sp_w->q_rescan_lock);
+	pthread_mutex_destroy(&sp_w->q_watch_lock);
+	pthread_mutex_destroy(&sp_w->lock);
+
+	
+
+	free(sp_w);
+	return(0);
+
+
+}
+
 int dwatch_start(dwatch_t * ps_w)
 {
 	pthread_mutex_lock(&ps_w->lock);
@@ -137,6 +171,7 @@ int dwatch_stop(dwatch_t * ps_w)
 dholder_t * dholder_new()
 {
     dholder_t * ps_h = calloc(1, sizeof(dholder_t));
+	if(ps_h) obj_init(&ps_h->t, OBJ_TYPE_DHOLDER);
     return(ps_h);
 }
 
@@ -175,4 +210,56 @@ int dwatch_dir(dwatch_t *ps_w, dir_t * ps_d)
 
     que_add_data(ps_w->q_watch, (char *) ps_holder);
     return(0);
+}
+
+
+
+
+
+/********************************************************/
+/* Interface for obj_t abstraction */
+/********************************************************/
+
+
+int obj_watch_free(obj_t * ps_o)
+{
+	return(int dwatch_destroy( (dwatch_t *)ps_o) );
+}
+
+
+int obj_dir_t_lock(obj_t * ps_o)
+{
+	dir_t * ps_d = (dir_t *) (ps_o);
+	return pthread_mutex_lock(&ps_d->lock);
+}
+
+int obj_dir_t_unlock(obj_t * ps_o)
+{
+	dir_t * ps_d = (dir_t *) (ps_o);
+	return pthread_mutex_unlock(&ps_d->lock);
+}
+
+obj_t * obj_dir_t_new(void * blabla)
+{
+	return ((obj_t *)dir_t_create_empty());
+}
+
+int obj_watch_valid(obj_t * ps_o)
+{
+	if (ps_o->type == OBJ_TYPE_WATCHER) return(OBJ_E_OK);
+	return(OBJ_E_TYPE);
+}
+
+
+void obj_dir_init_me()
+{
+	obj_f * pf = calloc(1, sizeof(obj_f));
+	pf->obj_dup = obj_copy_dir_t;
+	pf->obj_free = obj_dir_t_free;
+	pf->obj_lock = obj_dir_t_lock;
+	pf->obj_unlock = obj_dir_t_unlock;
+	pf->obj_new = obj_dir_t_new;
+	pf->obj_valid = obj_dir_t_valid;
+
+	obj_f_install(OBJ_TYPE_DIR, pf);
 }

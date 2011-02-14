@@ -16,6 +16,7 @@ que_t * que_create(void)
 	que_t * q = malloc(sizeof(que_t));
 	if(NULL == q) return(NULL);
 	bzero(q, sizeof(que_t));
+	obj_init(&q->t, OBJ_TYPE_DIR);
 	return(q);
 }
 
@@ -77,10 +78,8 @@ int que_delete_nodes_and_data(que_t *q)
 node_t * 	node_create_data(char * pc_data)
 {
 	node_t * ps_node;
-
 	ps_node = node_create();
 	if (! ps_node) return(NULL);
-
 	ps_node->pc_data = pc_data;
 	return(ps_node);
 }
@@ -92,6 +91,7 @@ node_t * 	node_create(void)
 	node_t * n = malloc(sizeof(node_t));
 	if(NULL == n) return(NULL);
 	bzero(n, sizeof(node_t));
+	obj_init(&n->t, OBJ_TYPE_NODE);
 	return(n);
 }
 
