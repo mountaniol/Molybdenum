@@ -249,3 +249,29 @@ node_t * que_find_node(que_t * q,  int i_data, compare_t compare)
     return(NULL);
 }
 
+
+/* It created new que_t and then copy chain of data */
+static que_t * que_dup(que_t * ps_src)
+{
+	que_t  * ps_dst = NULL;
+	node_t * ps_node = NULL;
+
+	ps_dst = que_create();
+	if(ps_src->amount > 0)
+	{
+		ps_node = ps_src->list;
+		while(ps_node)
+		{
+			que_add_node(ps_dst, (node_t *) obj_dup( (obj_t *) ps_node));
+			ps_node = ps_node->next;
+		}
+	}
+	return(ps_dst);
+}
+
+
+
+node_t * node_dup(node_t * ps_node)
+{
+	return(NULL);
+}

@@ -64,13 +64,18 @@ int 	dir_t_amount(dir_t *ps_dir);
 
 /* 		dir_t entries capacity manipulations */
 
-int 	dir_t_resize(dir_t *ps_dir, size_t i_new_size);
-int 	dir_t_insrease(dir_t *ps_dir, size_t i_new_size);
-int 	dir_t_shrink(dir_t *ps_dir, size_t i_new_size);
+int 	dir_t_resize(dir_t *ps_dir, 	size_t i_new_size);
+int 	dir_t_insrease(dir_t *ps_dir, 	size_t i_new_size);
+int 	dir_t_shrink(dir_t *ps_dir, 	size_t i_new_size);
 int 	dir_t_reset(dir_t *ps_dir);
+int 	dir_t_refresh(dir_t * ps_dir);
 
 int 	dir_t_clean(dir_t * ps_dir);
 int 	dir_t_free(dir_t * d);
+
+int 	dir_t_lock(dir_t * ps_dir);
+int 	dir_t_unlock(dir_t * ps_dir);
+
 
 dir_t * dir_t_scan(char *dir_name);
 dir_t * dir_t_scan2(char *dir_name);

@@ -13,23 +13,26 @@
 /* If the memory already reused and the fiels of ticket changed it remove the pinter to structure from he que */
 
 #define DIR_T_TICKET			( (int) 314159 )
-#define WATCHER_STATUS_RUN_BIT	(1<<0)
+#define WATCHER_F_RUN		(1<<0)
+#define WATCHER_F_CHANGED	(1<<1)
+#define WATCHER_F_RESCAN	(1<<2)
 
 #define SET_BIT(i, bit)	(i |= bit )
 #define CLN_BIT(i, bit)	(i &= ~bit)
 
-struct dir_t_holder
+struct watcher_obj_holder
 {
 	obj_t t;
-	dir_t *			ps_dir;			/* The dir_t struct */
+	obj_t *			ps_obj;			/* The dir_t struct */
 	struct stat		stat;			/* Last known stat of the directory */
 	time_t 			t_next_run;		/* When it should be checked next time */
+	int				status;
 };
 
-typedef struct dir_t_holder dholder_t;
+typedef struct watcher_obj_holder obj_holder_t;
 
 
-struct dir_t_watcher
+struct obj_watcher
 {
 	obj_t t;
 	pthread_t 			pid_watch;				/* pid of watcher thread */
@@ -37,7 +40,7 @@ struct dir_t_watcher
 
 	pthread_mutex_t 	lock;					/* Lock of the watcher */
 
-	int					status;					/* Status of the watcher: run / stop*/
+	int					status;					/* Status of the watcher: run / stop / changes */
 
 	pthread_mutex_t 	q_watch_lock;			/* Lock of the watcher */
 	pthread_mutex_t 	q_changed_lock;			/* Lock of the watcher */
@@ -46,20 +49,23 @@ struct dir_t_watcher
 	que_t *				q_watch;				/* Queue of all dir_t to watch */
 	que_t * 			q_changed;				/* Queue of dir_t that changed */
 	que_t * 			q_rescan;				/* If dir_t has flag RESCAN set and the dir_t has been changed the dir_t added to this que for its files rescanning */
+	size_t 				amount;					/* Amount is the amount of changed items */
 };
 
-typedef struct dir_t_watcher dwatch_t;
+typedef struct obj_watcher obj_watch_t;
 
-dwatch_t * dwatch_create(void);
-int dwatch_destroy(dwatch_t * sp_w);
-int dwatch_start(dwatch_t * ps_w);
-int dwatch_stop(dwatch_t * ps_w);
-int dwatch_dir(dwatch_t *ps_w, dir_t * ps_d);
+obj_watch_t * dwatch_create(void);
+int dwatch_destroy(obj_watch_t * sp_w);
+int dwatch_start(obj_watch_t * ps_w);
+int dwatch_stop(obj_watch_t * ps_w);
+int watch_obj(obj_watch_t *ps_w, obj_t * ps_o, int i_rescan);
 
-dholder_t * dholder_new();
-int dholder_free(dholder_t * ps_holder);
-int dholder_set_dir_t(dholder_t * ps_h,  dir_t * ps_dir);
-dholder_t * dholder_new_from_dir_t(dir_t * ps_d);
+obj_holder_t * 		dholder_new();
+int 				dholder_free(obj_holder_t * ps_holder);
+int 				objholder_set_obj_t(obj_holder_t * ps_h,  obj_t * ps_o);
+obj_holder_t * 		objholder_new_from_obj_t(obj_t * ps_o);
+
+void obj_dwatch_init_me(void);
 
 
 #endif /* _dir_t_watch_zdfhsdfjkhsdfjasdj987987 */

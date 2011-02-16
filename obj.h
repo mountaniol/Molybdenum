@@ -48,41 +48,55 @@ enum obj_operation_e
 
 /* Object structure works behind all */
 /* User has not use it in a direct manner */
+
+struct obj_operations;
+
 struct obj_struct
 {
 	type_e 		type; 	/* Object type 	*/
-	size_t 		size;	/* Object size 	*/
 	obj_e		error;	/* Last error  	*/
 	void * 		data;	/* A pointer	*/
+	struct obj_operations * f;
 };
-
 
 typedef struct obj_struct obj_t;
 
-
 typedef struct obj_operations
 {
-	obj_t * 	(*obj_new)(void * data);
-	int		 	(*obj_free)(obj_t * ps_o);
-	obj_e 		(*obj_init)(obj_t * ps_o);
-	int			(*obj_valid)(obj_t * ps_o);
-	obj_t * 	(*obj_dup)(obj_t * ps_o);
-	int			(*obj_lock)(obj_t * ps_o);
-	int			(*obj_unlock)(obj_t * ps_o);
-	obj_t * 	(*obj_next)(obj_t * ps_o);
+	obj_t * 	(*new)(void * data);					/* Create a new object */
+	int		 	(*free)(obj_t * ps_o);					/* Remove object and free the memory */
+	obj_e 		(*init)(obj_t * ps_o);					/* Initialize the object or reset it */
+	int			(*valid)(obj_t * ps_o);					/* Check the this object is valid: has right type at least */
+	obj_t * 	(*dup)(obj_t * ps_o);					/* Duplicate given object */
+	int			(*lock)(obj_t * ps_o);					/* Lock object if it lockable */
+	obj_t * 	(*diff)(obj_t * ps_a, obj_t * ps_b);	/* Conpare 2 objects; return elements that present in object b but aren't present in a */
+	obj_t * 	(*same)(obj_t * ps_a, obj_t * ps_b);	/* Compare 2 object; return new object of the same type contains common element of given objects */
+	int			(*unlock)(obj_t * ps_o);				/* Unlock the object it it is locked */
+	obj_t * 	(*next)(obj_t * ps_o);					/* Return pointer to next object if it has such ability */
+	size_t 		(*size)(obj_t * ps_o);					/* Return sizeof(object) of given type */
+	size_t 		(*amount)(obj_t * ps_o);				/* return number of elements that this object contains; it is object-dependened */
+	int 		(*refresh)(obj_t * ps_o);				/* Refresh: depends on object. If it directory it rescans the directory. If it is an file re-read state of the file */
 } obj_f;
 
 
-int obj_f_install(type_e, obj_f * o_f);
-obj_f * obj_f_get(type_e);
+int 		init_objects();
 
+int 		obj_f_install(type_e, obj_f * o_f);
+obj_f * 	obj_f_get(type_e);
+
+obj_e 		obj_init(obj_t * ps_o, type_e t);
 
 obj_e 		obj_type_validity(obj_t * ps_o, type_e e_type);
-obj_e 		obj_init(obj_t * ps_o, type_e t);
+obj_e 		obj_reset(obj_t * ps_o);
+obj_t * 	obj_diff(obj_t * ps_a, obj_t * ps_b);
+obj_t * 	obj_same(obj_t * ps_a, obj_t * ps_b);
+size_t 		obj_amount(obj_t * ps_o);
 obj_t * 	obj_dup(obj_t * ps_o);
 obj_t * 	obj_new(type_e t, void * data);
 int		 	obj_free(obj_t * ps_o);
-
-
+int		 	obj_lock(obj_t * ps_o);
+int		 	obj_unlock(obj_t * ps_o);
+size_t	 	obj_size(obj_t * ps_o);
+size_t	 	obj_amount(obj_t * ps_o);
 
 #endif /* _obj_h_sdfkjhdflajsdhfasdf76sdf76sd7f6asdf7 */

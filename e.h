@@ -7,13 +7,13 @@
 
 typedef enum object_error
 {
-	OBJ_E_OK = 0,
-	OBJ_W_AGAIN,
+	OBJ_E_OK = 0,			/* Operation completed, no errors */
+	OBJ_W_AGAIN,			/* Try again, returned if the object locked */
 
-	OBJ_E_TYPE = 0xFFFF,
-	OBJ_E_ARG,
-	OBJ_E_OBJ_SIZE,
-	OBJ_E_MEMORY
+	OBJ_E_TYPE = 0xFFFF,	/* Asked wrong operation for type */
+	OBJ_E_UNKNOWN, 			/* Returned on obj_init if the object type not registred */
+	OBJ_E_ARG,				/* Wrong argument */
+	OBJ_E_MEMORY			/* Memory error: can't allocate for example */
 } obj_e ;
 
 #endif /* _e_h_ashdfasdftasd542312763583975340968dkjfghd */

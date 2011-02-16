@@ -19,7 +19,7 @@ dfilter_t * dfilter_create()
 dfilter_t * dfilter_dup(dfilter_t * ps_f_src)
 {
 	dfilter_t * ps_f_dst = calloc(1, sizeof(dfilter_t));
-	if (!ps_f_dst) return(NULL);
+	if ( !ps_f_dst ) return(NULL);
 	obj_init(&ps_f_dst->t, OBJ_TYPE_FILTER);
 	ps_f_dst->next = NULL;
 	ps_f_dst->pc_data =  dfilter_copy_data(ps_f_src->e_ftype, ps_f_src->pc_data);
@@ -30,7 +30,7 @@ dfilter_t * dfilter_dup(dfilter_t * ps_f_src)
 
 int dfilter_destroy(dfilter_t * sp_filter)
 {
-	if (sp_filter->pc_data) free(sp_filter->pc_data);
+	if ( sp_filter->pc_data ) free(sp_filter->pc_data);
 	free(sp_filter);
 	return(0);
 }
@@ -38,14 +38,14 @@ int dfilter_destroy(dfilter_t * sp_filter)
 
 static char * dfilter_copy_data(efilter_t e, char * pc_data)
 {
-	switch(e)
+	switch ( e )
 	{
 	case FILTER_SIZE:
 	case FILTER_SIZE_LESS:
 	case FILTER_SIZE_MORE:
 		{
 			long * pl_new = malloc(sizeof(unsigned long) );
-			if (!pl_new) return(NULL);
+			if ( !pl_new ) return(NULL);
 			memcpy(pl_new, pc_data, sizeof(unsigned long));
 			return((char *) pl_new );
 		}
@@ -65,7 +65,7 @@ static char * dfilter_copy_data(efilter_t e, char * pc_data)
 	case FILTER_MODE:
 		{
 			mode_t * pm_new = malloc(sizeof(mode_t));
-			if (!pm_new) return(NULL);
+			if ( !pm_new ) return(NULL);
 			memcpy(pm_new, pc_data, sizeof(mode_t));
 			return( (char *) pm_new);
 		}
@@ -79,11 +79,11 @@ dfilter_t * dfilter_create_with_params(efilter_t e, char * pc_data)
 {
 	dfilter_t * sp_f = dfilter_create();
 
-	if (! sp_f) return(NULL);
+	if ( ! sp_f ) return(NULL);
 
-	sp_f->e_ftype = e;	
+	sp_f->e_ftype = e;  
 	sp_f->pc_data = dfilter_copy_data(e,pc_data);
-	if (!sp_f->pc_data)
+	if ( !sp_f->pc_data )
 	{
 		free(sp_f);
 		return(NULL);
@@ -95,11 +95,11 @@ dfilter_t * dfilter_create_with_params(efilter_t e, char * pc_data)
 
 int dfilter_add_data(dfilter_t * sp_f, char * pc_data)
 {
-	if(!sp_f) return(-1);
+	if ( !sp_f ) return(-1);
 
 	/* allocate memory for data. */
-	sp_f->pc_data = 		dfilter_copy_data(sp_f->e_ftype,pc_data);
-	if (!sp_f->pc_data) 	return(-1);
+	sp_f->pc_data =         dfilter_copy_data(sp_f->e_ftype,pc_data);
+	if ( !sp_f->pc_data )	  return(-1);
 
 	return(0);
 }
@@ -107,7 +107,7 @@ int dfilter_add_data(dfilter_t * sp_f, char * pc_data)
 
 int dfilter_set_type(dfilter_t * sp_f,  efilter_t e)
 {
-	if(!sp_f) return(-1);
+	if ( !sp_f ) return(-1);
 	sp_f->e_ftype = e;
 	return(0);
 }
@@ -117,7 +117,7 @@ int dfilter_add_to_dfilter(dfilter_t * sp_f, dfilter_t * sp_f_next)
 {
 	dfilter_t * sp_tmp = sp_f;
 
-	while(sp_tmp->next) sp_tmp = sp_tmp->next;
+	while ( sp_tmp->next ) sp_tmp = sp_tmp->next;
 	sp_tmp->next = sp_f_next;
 
 	return(0);
@@ -127,7 +127,7 @@ int dfilter_add_to_dfilter(dfilter_t * sp_f, dfilter_t * sp_f_next)
 int dfilter_add(dfilter_t * sp_f, efilter_t e, char * pc_data)
 {
 	dfilter_t * sp_new = dfilter_create_with_params(e, pc_data);
-	if (!sp_new) return(-1);
+	if ( !sp_new ) return(-1);
 
 	return(dfilter_add_to_dfilter(sp_f, sp_new));
 }
@@ -138,7 +138,7 @@ int dfilter_free(dfilter_t * sp_f)
 {
 	dfilter_t * sp_tmp;
 
-	while(sp_f)
+	while ( sp_f )
 	{
 		sp_tmp = sp_f->next;
 		dfilter_destroy(sp_f);
@@ -155,112 +155,112 @@ int dfilter_free(dfilter_t * sp_f)
 int dfilter_test_entry(dfilter_t * ps_f, entry_t * ps_entry)
 {
 	dfilter_t * ps_tmp = ps_f;
-	
-	while(ps_tmp)
+
+	while ( ps_tmp )
 	{
-		switch(ps_tmp->e_ftype)
+		switch ( ps_tmp->e_ftype )
 		{
 		/* The searsch by file size  */
 		case FILTER_SIZE:
 			{
 				off_t * l_size = (off_t *) ps_tmp->pc_data;
-				if (ps_entry->s_st.st_size != *l_size)
+				if ( ps_entry->s_st.st_size != *l_size )
 					return(-1);
 			}
 			break;
 
-		/* The searsch by file size  */
+			/* The searsch by file size  */
 		case FILTER_SIZE_LESS:
 			{
 				off_t * l_size = (off_t *) ps_tmp->pc_data;
-				if (*l_size < ps_entry->s_st.st_size)
+				if ( *l_size < ps_entry->s_st.st_size )
 					return(-1);
 			}
 			break;
 
-		/* The searsch by file size  */
+			/* The searsch by file size  */
 		case FILTER_SIZE_MORE:
 			{
 				off_t * l_size = (off_t *) ps_tmp->pc_data;
-				if (*l_size > ps_entry->s_st.st_size)
+				if ( *l_size > ps_entry->s_st.st_size )
 					return(-1);
 			}
 			break;
 
 
-		/* Case sensitive comp. by full name */
+			/* Case sensitive comp. by full name */
 		case FILTER_FULL_NAME:
-			if (strcmp(ps_entry->name, ps_tmp->pc_data))
+			if ( strcmp(ps_entry->name, ps_tmp->pc_data) )
 				return(-1);
 			break;
 
 
-		/* Find substring in the file name. Case sensitive. */
+			/* Find substring in the file name. Case sensitive. */
 		case FILTER_PART_NAME:
-			if (NULL == strstr(ps_entry->name, ps_tmp->pc_data)) return(-1);
+			if ( NULL == strstr(ps_entry->name, ps_tmp->pc_data) ) return(-1);
 			break;
 
-		/* Searches the substring in the file name. Case insensitive. */
+			/* Searches the substring in the file name. Case insensitive. */
 		case FILTER_PART_INSENSITIVE_NAME:
-			if ( NULL == strcasestr(ps_entry->name, ps_tmp->pc_data) ) 
+			if ( NULL == strcasestr(ps_entry->name, ps_tmp->pc_data) )
 				return(-1);
 			break;
 
-		/* The entry passes if not found substring.  */
+			/* The entry passes if not found substring.  */
 		case FILTER_HAS_NOT:
-			if ( strstr(ps_entry->name, ps_tmp->pc_data) ) 
+			if ( strstr(ps_entry->name, ps_tmp->pc_data) )
 				return(-1);
 			break;
 
-		/* The entry passes if not found substring. Case insensitive. */
+			/* The entry passes if not found substring. Case insensitive. */
 		case FILTER_HAS_NOT_INSENSITIVE:
-			if ( strcasestr(ps_entry->name, ps_tmp->pc_data) ) 
+			if ( strcasestr(ps_entry->name, ps_tmp->pc_data) )
 				return(-1);
 			break;
 
-		/* YYY The search by file type: read file type from the st_mode */
+			/* YYY The search by file type: read file type from the st_mode */
 		case FILTER_TYPE:
 			{
 				etype_t * ps_etype = (etype_t *) ps_tmp->pc_data;
 
-				switch(*ps_etype)
+				switch ( *ps_etype )
 				{
 				case FILTER_TYPE_REG:
-					if(!S_ISREG(ps_entry->s_st.st_mode)) return(-1);
+					if ( !S_ISREG(ps_entry->s_st.st_mode) )	return(-1);
 					break;
 				case FILTER_TYPE_SCK: 
-					if(!S_ISSOCK(ps_entry->s_st.st_mode)) return(-1);
+					if ( !S_ISSOCK(ps_entry->s_st.st_mode) ) return(-1);
 					break;
 				case FILTER_TYPE_LNK:
-					if(!S_ISLNK(ps_entry->s_st.st_mode)) return(-1);
+					if ( !S_ISLNK(ps_entry->s_st.st_mode) )	return(-1);
 					break;
 				case FILTER_TYPE_BLK:
-					if(!S_ISBLK(ps_entry->s_st.st_mode)) return(-1);
+					if ( !S_ISBLK(ps_entry->s_st.st_mode) )	return(-1);
 					break;
 				case FILTER_TYPE_DIR:
-					if(!S_ISDIR(ps_entry->s_st.st_mode)) return(-1);
+					if ( !S_ISDIR(ps_entry->s_st.st_mode) )	return(-1);
 					break;
 				case FILTER_TYPE_CHR:
-					if(!S_ISCHR(ps_entry->s_st.st_mode)) return(-1);
+					if ( !S_ISCHR(ps_entry->s_st.st_mode) )	return(-1);
 					break;
 				case FILTER_TYPE_FIF:
-					if(!S_ISFIFO(ps_entry->s_st.st_mode)) return(-1);
+					if ( !S_ISFIFO(ps_entry->s_st.st_mode) ) return(-1);
 					break;
 				}
 			}
 			break;
 
-		/* YYY The search by file extention.  */
+			/* YYY The search by file extention.  */
 		case FILTER_EXTENTION:
 			{
 				char * pc_r_index;
 				pc_r_index = rindex(ps_entry->name, '.');
-				if (! pc_r_index) return(-1);
-				if (strcasecmp(pc_r_index + 1, ps_tmp->pc_data)) return(-1);
+				if ( ! pc_r_index )	return(-1);
+				if ( strcasecmp(pc_r_index + 1, ps_tmp->pc_data) ) return(-1);
 			}
 			break;
 
-		/* YYY The search by file mode: from st_mode */
+			/* YYY The search by file mode: from st_mode */
 		case FILTER_MODE:
 			break;
 
@@ -273,6 +273,23 @@ int dfilter_test_entry(dfilter_t * ps_f, entry_t * ps_entry)
 	return(0);
 }
 
+
+static dfilter_t * dfilter_copy(dfilter_t * ps_f_s)
+{
+	dfilter_t * ps_f_d      = NULL;
+	dfilter_t * ps_f_tmp    = NULL;
+
+	while ( ps_f_s )
+	{
+		ps_f_tmp = dfilter_dup(ps_f_s);
+		if ( ps_f_d ) dfilter_add_to_dfilter(ps_f_d, ps_f_tmp);
+		else ps_f_d	= ps_f_tmp;
+	}
+
+	return(ps_f_d);
+}
+
+
 /* The function of interest. It apply whole the chain of rules to every item in dir_t_in. If an item answers to all rules it copyed to dir_t_out */
 /* The function returns 0 on success, < 0 on an error */
 
@@ -280,29 +297,45 @@ int dfilter_by_copy(dir_t * sp_dir_in,  dir_t * sp_dir_out, dfilter_t *sp_f)
 {
 
 	int i;
+	dfilter_t * ps_f_copy;
 
-	if (! sp_dir_in || ! sp_dir_out || !sp_f) 
+	if ( ! sp_dir_in || ! sp_dir_out || !sp_f )
 	{
 		printf("One of params is wrong\n");
 		return(-1);
 	}
 
-	if(!sp_dir_out->entry || sp_dir_out->entry_allocated < sp_dir_in->amount)
+	dir_t_lock(sp_dir_in);
+	dir_t_lock(sp_dir_out);
+
+	if ( !sp_dir_out->entry || sp_dir_out->entry_allocated < sp_dir_in->amount )
 	{
 		dir_t_allocate_entry(sp_dir_out, sp_dir_in->amount);
 	}
 
 	sp_dir_out->amount = 0;
 
-	for (i = 0; i < sp_dir_in->amount ; i++)
+	for ( i = 0; i < sp_dir_in->amount ; i++ )
 	{
-		if (0 == dfilter_test_entry(sp_f, &sp_dir_in->entry[i]) )
+		if ( 0 == dfilter_test_entry(sp_f, &sp_dir_in->entry[i]) )
 		{
 			/* YYY entry copying should be a part of support lib */
 			memcpy(&(sp_dir_out->entry[sp_dir_out->amount++]), &(sp_dir_in->entry[i]), sizeof(entry_t));
 		}
 	}
 
+	if ( sp_dir_out->filter != sp_f)
+	{
+		ps_f_copy = dfilter_copy(sp_f);
+		if ( sp_dir_out->filter )
+		{
+			if (sp_dir_out->filter)dfilter_free(sp_dir_out->filter);
+			sp_dir_out->filter = ps_f_copy;
+		}
+	}
+
+	dir_t_unlock(sp_dir_out);
+	dir_t_unlock(sp_dir_in);
 	return(0);
 }
 
@@ -315,16 +348,19 @@ int dfilter_by_shrink(dir_t * sp_dir,  dfilter_t *sp_f)
 
 	int i;
 	int j = 0;
+	dfilter_t * ps_f_copy;
 
-	if (! sp_dir || !sp_f) 
+	if ( ! sp_dir || !sp_f )
 	{
 		printf("One of params is wrong\n");
 		return(-1);
 	}
 
-	for (i = 0; i < sp_dir->amount ; i++)
+	dir_t_lock(sp_dir);
+
+	for ( i = 0; i < sp_dir->amount ; i++ )
 	{
-		if (0 == dfilter_test_entry(sp_f, &sp_dir->entry[i]) && j < i)
+		if ( 0 == dfilter_test_entry(sp_f, &sp_dir->entry[i]) && j < i )
 		{
 			/* YYY entry copying should be a part of support lib */
 			memcpy(&( sp_dir->entry[j++] ), &( sp_dir->entry[i] ), sizeof(entry_t));
@@ -334,6 +370,23 @@ int dfilter_by_shrink(dir_t * sp_dir,  dfilter_t *sp_f)
 	/* Done. If j < i it means that there are obsolete entries. So shrink the array */
 
 	dir_t_shrink(sp_dir, j);
-	
+
+	/* Last step: copy the filter and install into the dir_t if it isn't installed yet   */
+
+	if ( sp_dir->filter != sp_f )
+	{
+		ps_f_copy = dfilter_copy(sp_f);
+		if ( sp_dir->filter )
+		{
+			if(sp_dir->filter) dfilter_free(sp_dir->filter);
+			sp_dir->filter = ps_f_copy;
+		}
+	}
+
+	dir_t_unlock(sp_dir);
 	return(0);
 }
+
+
+
+
