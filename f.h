@@ -29,7 +29,7 @@ typedef enum efilter_type
 	FILTER_HAS_NOT_INSENSITIVE,		/* If given substring is NOT found in file name it passes; search is insensitive to register  */
 	FILTER_EXTENTION,				/* Test extention of file; given pattern compired to extention ( of the file */
 	FILTER_TYPE,					/* Test type of file; given data extracted as mode_t and compired to the fiven pointer by macro S_*  */
-	FILTER_MODE,					/* Test permission of file, find all files / dirs with exactly the given permissions */
+	FILTER_MODE					/* Test permission of file, find all files / dirs with exactly the given permissions */
 
 } efilter_t;
 
@@ -42,7 +42,7 @@ typedef enum efilter_file_type
 	FILTER_TYPE_BLK = S_IFBLK,
 	FILTER_TYPE_DIR = S_IFDIR,
 	FILTER_TYPE_CHR = S_IFCHR,
-	FILTER_TYPE_FIF = S_IFIFO,
+	FILTER_TYPE_FIF = S_IFIFO
 
 } etype_t;
 
