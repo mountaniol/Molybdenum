@@ -15,7 +15,7 @@ void * thread_rescan(void* pv_attr)
 void * thread_watch(void* pv_attr)
 {
 	int i;
-	obj_watch_t * sp_w = ( obj_watch_t * ) pv_attr;
+	owatch_t * sp_w = ( owatch_t * ) pv_attr;
     node_t * ps_node;
     obj_holder_t * ps_holder;
     struct stat s_stat;
@@ -74,11 +74,11 @@ void * thread_watch(void* pv_attr)
 
 
 
-obj_watch_t * dwatch_create(void)
+owatch_t * owatch_create(void)
 {
 	int i;
-	obj_watch_t * sp_w;
-	sp_w = calloc(1, sizeof(obj_watch_t));
+	owatch_t * sp_w;
+	sp_w = calloc(1, sizeof(owatch_t));
 
 	if(!sp_w) return(NULL);
 
@@ -124,7 +124,7 @@ error_que:
 
 
 
-int dwatch_destroy(obj_watch_t * sp_w)
+int owatch_destroy(owatch_t * sp_w)
 {
 	if (!sp_w) return(-1);
 
@@ -153,7 +153,7 @@ int dwatch_destroy(obj_watch_t * sp_w)
 
 }
 
-int dwatch_start(obj_watch_t * ps_w)
+int owatch_star(owatch_t * ps_w)
 {
 	pthread_mutex_lock(&ps_w->lock);
 	SET_BIT(ps_w->status, WATCHER_F_RUN);	
@@ -162,7 +162,7 @@ int dwatch_start(obj_watch_t * ps_w)
 }
 
 
-int dwatch_stop(obj_watch_t * ps_w)
+int owatch_stop(owatch_t * ps_w)
 {
 
 	pthread_mutex_lock(&ps_w->lock);
@@ -178,14 +178,14 @@ obj_holder_t * dholder_new()
     return(ps_h);
 }
 
-int dholder_free(obj_holder_t * ps_holder)
+int oholder_free(obj_holder_t * ps_holder)
 {
     /* XXX Remove holder from all  queues it it is there */
     free(ps_holder);
     return(0);
 }
 
-int objholder_set_obj_t(obj_holder_t * ps_h,  obj_t * ps_o)
+int oholder_set_obj_t(obj_holder_t * ps_h,  obj_t * ps_o)
 {
 	if (ps_o->type != OBJ_TYPE_DIR) return(-1);
 
@@ -206,9 +206,9 @@ obj_holder_t * objholder_new_from_obj_t(obj_t * ps_o)
     obj_holder_t * ps_holder = dholder_new();
     if(!ps_holder) return (NULL);
 
-    if (objholder_set_obj_t(ps_holder, ps_o))
+    if (oholder_set_obj_t(ps_holder, ps_o))
     {
-        dholder_free(ps_holder);
+        oholder_free(ps_holder);
         return(NULL);
     }
 
@@ -217,7 +217,7 @@ obj_holder_t * objholder_new_from_obj_t(obj_t * ps_o)
 
 
 /* Adding an object to watch. If i_rescan != 0 it will rescan the object on change (if it an directory it rescan the directory) */
-int watch_obj(obj_watch_t *ps_w, obj_t * ps_o, int i_rescan)
+int watch_obj(owatch_t *ps_w, obj_t * ps_o, int i_rescan)
 {
     obj_holder_t * ps_holder = objholder_new_from_obj_t(ps_o);
 
@@ -236,26 +236,26 @@ int watch_obj(obj_watch_t *ps_w, obj_t * ps_o, int i_rescan)
 
 static int obj_watch_free(obj_t * ps_o)
 {
-	return( dwatch_destroy( (obj_watch_t *)ps_o ) );
+	return( owatch_destroy( (owatch_t *)ps_o ) );
 }
 
 
 static int obj_watch_lock(obj_t * ps_o)
 {
-	obj_watch_t * ps_w = (obj_watch_t *) (ps_o);
+	owatch_t * ps_w = (owatch_t *) (ps_o);
 	return pthread_mutex_lock(&ps_w->lock);
 }
 
 static int obj_watch_unlock(obj_t * ps_o)
 {
-	obj_watch_t * ps_w = (obj_watch_t *) (ps_o);
+	owatch_t * ps_w = (owatch_t *) (ps_o);
 	return pthread_mutex_unlock(&ps_w->lock);
 }
 
 
 static obj_t * obj_watch_new(void * blabla)
 {
-	return ((obj_t *) dwatch_create());
+	return ((obj_t *) owatch_create());
 }
 
 static int obj_watch_valid(obj_t * ps_o)
@@ -267,12 +267,12 @@ static int obj_watch_valid(obj_t * ps_o)
 
 static size_t obj_watch_amount(obj_t * ps_o)
 {
-	return( ((obj_watch_t *) ps_o)->q_watch->amount);
+	return( ((owatch_t *) ps_o)->q_watch->amount);
 	return(OBJ_E_TYPE);
 }
 
 
-void obj_dwatch_init_me()
+void owatch_init_me()
 {
 	obj_f * pf = calloc(1, sizeof(obj_f));
 	pf->dup = NULL;
@@ -282,9 +282,9 @@ void obj_dwatch_init_me()
 	pf->new = obj_watch_new;
 	pf->valid = obj_watch_valid;
 
-	//pf->init = obj_dir_t_init;
-	//pf->diff = obj_dir_t_diff;
-	//pf->same = obj_dir_t_diff;
+	/* pf->init = obj_dir_t_init;
+	pf->diff = obj_dir_t_diff;
+	pf->same = obj_dir_t_diff; */
 	pf->amount = obj_watch_amount;
 
 	obj_f_install(OBJ_TYPE_WATCHER, pf);
