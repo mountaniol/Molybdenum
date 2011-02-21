@@ -2,6 +2,7 @@
 #define _obj_h_sdfkjhdflajsdhfasdf76sdf76sd7f6asdf7
 
 #include "e.h"
+#include "lock.h"
 
 /* Abstraction level. */
 /* obj_t is container which holds other structures */
@@ -10,6 +11,7 @@
 
 typedef enum obj_type
 {
+    OBJ_TYPE_NONE = 0,          /* This is special type: no type*/
 	OBJ_TYPE_BEGIN = 1,
 	OBJ_TYPE_CHAR,
 	OBJ_TYPE_SHORT,
@@ -29,7 +31,8 @@ typedef enum obj_type
 	OBJ_TYPE_NODE,
 	OBJ_TYPE_WATCHER,
 	OBJ_TYPE_DHOLDER,
-	OBJ_TYPE_END,
+    OBJ_TYPE_CBS,   
+    OBJ_TYPE_END
 
 } type_e;
 
@@ -46,6 +49,9 @@ enum obj_operation_e
 	OBJ_NEXT
 };
 
+typedef unsigned int id_t;
+
+
 /* Object structure works behind all */
 /* User has not use it in a direct manner */
 
@@ -54,6 +60,8 @@ struct obj_operations;
 struct obj_struct
 {
 	type_e 		type; 	/* Object type 	*/
+    id_t            id;
+    olock_t     lock;
 	obj_e		error;	/* Last error  	*/
 	void * 		data;	/* A pointer	*/
 	struct obj_operations * f;
@@ -77,7 +85,6 @@ typedef struct obj_operations
 	size_t 		(*amount)(obj_t * ps_o);				/* return number of elements that this object contains; it is object-dependened */
 	int 		(*refresh)(obj_t * ps_o);				/* Refresh: depends on object. If it directory it rescans the directory. If it is an file re-read state of the file */
 } obj_f;
-
 
 int 		init_objects();
 
