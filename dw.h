@@ -1,5 +1,5 @@
-#ifndef _dir_t_watch_zdfhsdfjkhsdfjasdj987987
-#define _dir_t_watch_zdfhsdfjkhsdfjasdj987987
+#ifndef _owatch_zdfhsdfjkhsdfjasdj987987
+#define _owatch_zdfhsdfjkhsdfjasdj987987
 
 /* Vsevolod Mountaniol, 2011, GPL */
 /* This file is a part of Molybdenum project */
@@ -26,7 +26,8 @@ struct watcher_obj_holder
 	obj_t *			ps_obj;			/* The dir_t struct */
 	struct stat		stat;			/* Last known stat of the directory */
 	time_t 			t_next_run;		/* When it should be checked next time */
-	int				status;
+    
+    int				status;
 };
 
 typedef struct watcher_obj_holder obj_holder_t;
@@ -50,24 +51,25 @@ struct obj_watcher
 	que_t * 			q_changed;				/* Queue of dir_t that changed */
 	que_t * 			q_rescan;				/* If dir_t has flag RESCAN set and the dir_t has been changed the dir_t added to this que for its files rescanning */
 	size_t 				amount;					/* Amount is the amount of changed items */
+    void (*callback)(obj_t*);               /* Send changed object to this func */
 };
 
-typedef struct obj_watcher obj_watch_t;
+typedef struct obj_watcher owatch_t;
 
-obj_watch_t * dwatch_create(void);
-int dwatch_destroy(obj_watch_t * sp_w);
-int dwatch_start(obj_watch_t * ps_w);
-int dwatch_stop(obj_watch_t * ps_w);
-int watch_obj(obj_watch_t *ps_w, obj_t * ps_o, int i_rescan);
+owatch_t * owatch_create(void);
+int owatch_destroy(owatch_t * sp_w);
+int owatch_star(owatch_t * ps_w);
+int owatch_stop(owatch_t * ps_w);
+int watch_obj(owatch_t *ps_w, obj_t * ps_o, int i_rescan);
 
 obj_holder_t * 		dholder_new();
-int 				dholder_free(obj_holder_t * ps_holder);
-int 				objholder_set_obj_t(obj_holder_t * ps_h,  obj_t * ps_o);
+int 				oholder_free(obj_holder_t * ps_holder);
+int 				oholder_set_obj_t(obj_holder_t * ps_h,  obj_t * ps_o);
 obj_holder_t * 		objholder_new_from_obj_t(obj_t * ps_o);
 
-void obj_dwatch_init_me(void);
+void owatch_init_me(void);
 
 
-#endif /* _dir_t_watch_zdfhsdfjkhsdfjasdj987987 */
+#endif /* _owatch_zdfhsdfjkhsdfjasdj987987 */
 
 
