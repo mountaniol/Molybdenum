@@ -10,7 +10,7 @@
 #include "e.h"
 #include "dw.h"
 #include "l.h"
-
+#include "lock.h"
 
 int	st_obj_free(void);
 
@@ -34,10 +34,10 @@ void destroy_objects()
 
 int init_objects()
 {
-	memset(obj_f_array, 0, sizeof(obj_f ) * OBJ_TYPE_END);
+	memset(obj_f_array, 0, sizeof(obj_f *) * OBJ_TYPE_END);
 	/* Add here init of your object */
 	obj_dir_init_me();
-	obj_dwatch_init_me();
+	owatch_init_me();
 
 	atexit(destroy_objects);
 	return(0);
