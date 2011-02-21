@@ -585,7 +585,7 @@ dir_t * dir_t_scan_filter(char *dir_name, dfilter_t * ps_filter)
 
 	if (!q) return(NULL);
 
-//	printf("Scanned to que: %d\n", q->amount);
+/*	printf("Scanned to que: %d\n", q->amount); */
 
 	d = dir_t_create_empty();
 
