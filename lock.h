@@ -7,14 +7,10 @@
 
 typedef pthread_mutex_t olock_t;
 
-inline int olock_lock(olock_t *lock)
-{
-    return(pthread_mutex_lock(lock));
-}
+int olock_lock(olock_t *lock);
+int olock_unlock(olock_t *lock);
+int olock_init(olock_t * lock);
+int olock_destroy(olock_t * lock);
 
-inline int olock_unlock(olock_t *lock)
-{
-    return(pthread_mutex_unlock(lock));
-}
 
 #endif /* _lock_h_ksjdfhksdfsdf09sdfsd545s45df4 */
