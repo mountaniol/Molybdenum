@@ -8,10 +8,10 @@ It is under initial development now. Examples and documentations will be added s
 
 The framework is partly ready for usage. The ques, dir structures, directory
 filters are ready (partly at least). These tools allow easy scan and cmpare
-directories, filter them by a parameter. If you interested in this please
-contact my and I'll write an example.
+directories, filter them by a parameter. If you interested in these tools please
+contact me and I'll write an example.
 
-The signals (notification) are in work. It is the big showstopper for the moment.
+The signals (notification) are "under construction". It is the big show stopper for the moment.
 
 Keep in touch.
 I will be back soon.
