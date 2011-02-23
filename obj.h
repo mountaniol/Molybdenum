@@ -1,70 +1,28 @@
 #ifndef _obj_h_sdfkjhdflajsdhfasdf76sdf76sd7f6asdf7
 #define _obj_h_sdfkjhdflajsdhfasdf76sdf76sd7f6asdf7
 
+#include "otypes.h"
 #include "e.h"
 #include "lock.h"
+#include "signals.h"
 
 /* Abstraction level. */
 /* obj_t is container which holds other structures */
 /* Every structure begins from type obj_t and the obj_t keeps the type of structure and its size  */
 /* in file obj_c there is realisation of object manipulation ; creation, deleting, copying */
 
-typedef enum obj_type
-{
-    OBJ_TYPE_NONE = 0,          /* This is special type: no type*/
-	OBJ_TYPE_BEGIN = 1,
-	OBJ_TYPE_CHAR,
-	OBJ_TYPE_SHORT,
-	OBJ_TYPE_INT,
-	OBJ_TYPE_LONG,
-	OBJ_TYPE_LOLGLONG,
-	OBJ_TYPE_UCHAR,
-	OBJ_TYPE_USHORT,
-	OBJ_TYPE_UINT,
-	OBJ_TYPE_ULONG,
-	OBJ_TYPE_POINTER,
-	OBJ_TYPE_ENTRY,
-	OBJ_TYPE_DIR,
-	OBJ_TYPE_FILTER,
-	OBJ_TYPE_FILE,
-	OBJ_TYPE_QUE,
-	OBJ_TYPE_NODE,
-	OBJ_TYPE_WATCHER,
-	OBJ_TYPE_DHOLDER,
-    OBJ_TYPE_CBS,   
-    OBJ_TYPE_END
-
-} type_e;
-
-
-enum obj_operation_e
-{
-	OBJ_NEW = 1,
-	OBJ_FREE,
-	OBJ_INIT,
-	OBJ_VALID,
-	OBJ_DUP,
-	OBJ_LOCK,
-	OBJ_UNLOCK,
-	OBJ_NEXT
-};
-
-typedef unsigned int id_t;
-
 
 /* Object structure works behind all */
 /* User has not use it in a direct manner */
 
-struct obj_operations;
-
 struct obj_struct
 {
-	type_e 		type; 	/* Object type 	*/
-    id_t            id;
-    olock_t     lock;
-	obj_e		error;	/* Last error  	*/
-	void * 		data;	/* A pointer	*/
-	struct obj_operations * f;
+	type_e 		type; 						/* Object type 	*/
+    id_t        id;							/* Object id: uniq */
+    olock_t     lock;						/* Object lock */
+	obj_e		error;						/* Last error, used in misc. situations	*/
+	void * 		data;						/* A pointer to a data.	*/
+	int 		(*sighandler)(osig_t * ps_sig);		/* This function invoked when a signal received; if this function == NULL the signal will be rejected */
 };
 
 typedef struct obj_struct obj_t;
@@ -92,6 +50,7 @@ int 		obj_f_install(type_e, obj_f * o_f);
 obj_f * 	obj_f_get(type_e);
 
 obj_e 		obj_init(obj_t * ps_o, type_e t);
+obj_e 		obj_finish(obj_t * ps_o);
 
 obj_e 		obj_type_validity(obj_t * ps_o, type_e e_type);
 obj_e 		obj_reset(obj_t * ps_o);

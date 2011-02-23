@@ -57,8 +57,16 @@ obj_e obj_init(obj_t * ps_o, type_e t)
 	if (!obj_f_array[t]) return( OBJ_E_TYPE );
 
 	ps_o->type = t;
-	ps_o->f = obj_f_array[t];
+	olock_init(&ps_o->lock);
+	return(OBJ_E_OK);
+}
 
+
+obj_e obj_finish(obj_t * ps_o)
+{
+	/* If the object not registred - return error */
+	ps_o->type = OBJ_TYPE_NONE;
+	olock_destroy(&ps_o->lock);
 	return(OBJ_E_OK);
 }
 
