@@ -1,73 +1,33 @@
 /* Vsevolod Mountaniol, 2011, GPL */
 /* This file is a part of Molybdenum project */
 
+#include "cbs.h"
 #include "d.h"
 #include "dw.h"
+#include "lock.h"
+
+
 int main()
 {
-	obj_t * sp_a;
-    obj_t * sp_b;
-    obj_t * sp_result = NULL;
+	obj_t o;
 
-	obj_t * ps_watch;
-    int i;
+	cbs_init();
 
-	init_objects();
+	o.id = cbs_get_id();
+	printf("id: %d\n", o.id);
+	o.id = cbs_get_id();
+	printf("id: %d\n", o.id);
 
-	obj_t * po_filter = obj_new(OBJ_TYPE_FILTER, NULL);
-	ps_watch = 			obj_new(OBJ_TYPE_WATCHER, NULL);
+	cbs_return_id(&o);
 
-	sp_a =  obj_new(OBJ_TYPE_DIR, "/tmp/a");
+		o.id = cbs_get_id();
+	printf("id: %d\n", o.id);
 
-	watch_obj(ps_watch, sp_a, 1);
+	cbs_return_id(&o);
 
-	while(1)
-	{
-		while(obj_amount(ps_watch) == 0) 
-		{
-			sleep(1);
-		}
+	cbs_insert_obj(&o);
 
-		printf("Changed directory\n");
-		((obj_watch_t *) ps_watch)->amount = 0;
-	}
 
+	cbs_destroy();
 	return(0);
-
-
-	if (!sp_a)
-	{
-		printf("Can't create obj\n");
-		return(-1);
-	}
-
-    sp_b =  obj_new(OBJ_TYPE_DIR, "/home/vitaly/src/cmd/splitter.orig");
-
-    if (!sp_a || !sp_b)	return(-1);
-
-    sp_result = obj_diff(sp_a, sp_b);
-
-    if(sp_result) 
-	{
-		printf("sp_result a->b : %d\n", obj_amount(sp_result));
-		for (i = 0 ; i < obj_amount(sp_result) ; i++)
-			printf("%i: %s\n", i, ((dir_t *)sp_result)->entry[i].name);
-		obj_free(sp_result);
-	}
-
-	sp_result =  obj_diff(sp_b, sp_a);
-    if(sp_result)
-	{
-		printf("sp_result diff b->a : %d\n", ((dir_t *)sp_result)->amount);
-		for (i = 0 ; i < ((dir_t *)sp_result)->amount ; i++)
-			printf("%i: %s\n", i, ((dir_t *)sp_result)->entry[i].name);
-		obj_free(sp_result);
-	}
-
-	obj_free(po_filter);
-	obj_free(sp_a);
-	obj_free(sp_b);
-	obj_free(ps_watch);
-    return(0);
-  
 }
