@@ -16,7 +16,6 @@ que_t * que_create(void)
 	que_t * q = malloc(sizeof(que_t));
 	if(NULL == q) return(NULL);
 	bzero(q, sizeof(que_t));
-	obj_init(&q->t, OBJ_TYPE_DIR);
 	return(q);
 }
 
@@ -91,7 +90,6 @@ node_t * 	node_create(void)
 	node_t * n = malloc(sizeof(node_t));
 	if(NULL == n) return(NULL);
 	bzero(n, sizeof(node_t));
-	obj_init(&n->t, OBJ_TYPE_NODE);
 	return(n);
 }
 
@@ -248,6 +246,38 @@ node_t * que_find_node(que_t * q,  int i_data, compare_t compare)
 
     return(NULL);
 }
+
+
+char * que_remove_node_by_data(que_t * q,  char * pc_data)
+{
+
+	node_t * prev;
+	node_t * node;
+	char * pc_ret_data;
+	prev = node = q->list;
+	if (0 == q->amount)
+	{
+		/*		LOG("empty que or no data : %p %d \n", data, q->amount); */
+		return NULL;
+	}
+
+	while (node)
+	{
+		if (node->pc_data == pc_data )
+		{
+			prev = node->next;
+			pc_ret_data = node->pc_data;
+			free(node);
+			return(pc_ret_data);
+		}
+
+		prev = node;
+		node = node->next;
+	}
+
+    return(NULL);
+}
+
 
 
 /* It created new que_t and then copy chain of data */
