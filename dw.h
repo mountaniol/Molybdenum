@@ -51,7 +51,7 @@ struct obj_watcher
 	que_t * 			q_changed;				/* Queue of dir_t that changed */
 	que_t * 			q_rescan;				/* If dir_t has flag RESCAN set and the dir_t has been changed the dir_t added to this que for its files rescanning */
 	size_t 				amount;					/* Amount is the amount of changed items */
-    void (*callback)(obj_t*);               /* Send changed object to this func */
+    void (*callback)(obj_t*);               	/* Send changed object to this func */
 };
 
 typedef struct obj_watcher owatch_t;
