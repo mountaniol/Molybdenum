@@ -86,8 +86,6 @@ dir_t * dir_t_create_empty(void)
 	if (!d)	return(NULL);
 
 	/* Type definition */
-	obj_init(&d->t, OBJ_TYPE_DIR);
-	pthread_mutex_init(&d->lock, NULL);
 	return(d);
 }
 
@@ -872,7 +870,6 @@ static int obj_dir_t_unlock(obj_t * ps_o)
 static obj_t * obj_dir_t_new(void * pv_d)
 {
 	if (!pv_d) return((obj_t *)dir_t_create_empty());
-
 	return ((obj_t *)dir_t_scan2((char *) pv_d));
 }
 
