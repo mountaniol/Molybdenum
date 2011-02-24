@@ -64,5 +64,7 @@ int		 	obj_lock(obj_t * ps_o);
 int		 	obj_unlock(obj_t * ps_o);
 size_t	 	obj_size(obj_t * ps_o);
 size_t	 	obj_amount(obj_t * ps_o);
+obj_e 		obj_err(obj_t * o);
+
 
 #endif /* _obj_h_sdfkjhdflajsdhfasdf76sdf76sd7f6asdf7 */
