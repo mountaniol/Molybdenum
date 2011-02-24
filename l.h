@@ -35,6 +35,7 @@ que_t * 	que_create(void);
 int 		que_destroy(que_t *);
 int 		que_destroy_data(que_t *q);
 int 		que_delete_nodes_and_data(que_t *q);
+char * 		que_remove_node_by_data(que_t * q,  char * pc_data);
 node_t * 	node_create(void);
 node_t * 	node_create_data(char * pc_data);
 node_t * 	node_extract(que_t *);
