@@ -9,6 +9,11 @@
 
 void * thread_rescan(void* pv_attr)
 {
+	while(1)
+	{
+		usleep(500000);
+	}
+
 	return(NULL);
 }
 
@@ -82,9 +87,6 @@ owatch_t * owatch_create(void)
 
 	if(!sp_w) return(NULL);
 
-	obj_init(&sp_w->t, OBJ_TYPE_WATCHER);
-
-	pthread_mutex_init(&sp_w->lock, NULL);
 	pthread_mutex_init(&sp_w->q_changed_lock, NULL);
 	pthread_mutex_init(&sp_w->q_rescan_lock, NULL);
 	pthread_mutex_init(&sp_w->q_watch_lock, NULL);
@@ -113,7 +115,6 @@ error_que:
 	pthread_mutex_destroy(&sp_w->q_changed_lock);
 	pthread_mutex_destroy(&sp_w->q_rescan_lock);
 	pthread_mutex_destroy(&sp_w->q_watch_lock);
-	pthread_mutex_destroy(&sp_w->lock);
 
 	CLN_BIT(sp_w->status, WATCHER_F_RUN);
 
@@ -121,7 +122,6 @@ error_que:
 	return(NULL);
 
 }
-
 
 
 int owatch_destroy(owatch_t * sp_w)
@@ -174,7 +174,6 @@ int owatch_stop(owatch_t * ps_w)
 obj_holder_t * dholder_new()
 {
     obj_holder_t * ps_h = calloc(1, sizeof(obj_holder_t));
-	if(ps_h) obj_init(&ps_h->t, OBJ_TYPE_DHOLDER);
     return(ps_h);
 }
 
