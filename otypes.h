@@ -23,7 +23,9 @@ typedef enum obj_type
 	OBJ_TYPE_NODE,
 	OBJ_TYPE_WATCHER,
 	OBJ_TYPE_DHOLDER,
-    OBJ_TYPE_CBS,   
+	OBJ_TYPE_CBS_HASH1,
+	OBJ_TYPE_CBS_HASH2,
+    OBJ_TYPE_CBS_O,   
     OBJ_TYPE_END
 
 } type_e;
@@ -41,12 +43,6 @@ enum obj_operation_e
 	OBJ_NEXT
 };
 
-
-
-
-
 typedef unsigned int id_t;
-
-
 
 #endif /* _otypes_h_dshjg23hgjh5jk4634j4 */
