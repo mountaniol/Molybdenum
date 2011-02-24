@@ -11,7 +11,6 @@ static char * dfilter_copy_data(efilter_t e, char * pc_data);
 dfilter_t * dfilter_create()
 {
 	dfilter_t * ps_f = calloc(1, sizeof(dfilter_t));
-	obj_init(&ps_f->t, OBJ_TYPE_FILTER);
 	return(ps_f);
 }
 
@@ -20,7 +19,6 @@ dfilter_t * dfilter_dup(dfilter_t * ps_f_src)
 {
 	dfilter_t * ps_f_dst = calloc(1, sizeof(dfilter_t));
 	if ( !ps_f_dst ) return(NULL);
-	obj_init(&ps_f_dst->t, OBJ_TYPE_FILTER);
 	ps_f_dst->next = NULL;
 	ps_f_dst->pc_data =  dfilter_copy_data(ps_f_src->e_ftype, ps_f_src->pc_data);
 
