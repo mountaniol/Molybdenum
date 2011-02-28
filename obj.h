@@ -5,6 +5,7 @@
 #include "e.h"
 #include "lock.h"
 #include "signals.h"
+#include "que_s.h"
 
 /* Abstraction level. */
 /* obj_t is container which holds other structures */
@@ -15,14 +16,19 @@
 /* Object structure works behind all */
 /* User has not use it in a direct manner */
 
+struct que_struct;
+
 struct obj_struct
 {
-	type_e 		type; 						/* Object type 	*/
-    id_t        id;							/* Object id: uniq */
-    olock_t     lock;						/* Object lock */
-	obj_e		error;						/* Last error, used in misc. situations	*/
-	void * 		data;						/* A pointer to a data.	*/
+	type_e 		type; 								/* Object type 		*/
+    id_t        id;									/* Object id: uniq 	*/
+    olock_t     lock;								/* Object lock 		*/
+	obj_e		error;								/* Last error, used in misc. situations	*/
+	void * 		data;								/* A pointer to a data.	*/
+	struct que_struct * 	q_sig;								/* Que of signals */
+	int			signals;							/* Not null if there a signals in the q_siq */
 	int 		(*sighandler)(osig_t * ps_sig);		/* This function invoked when a signal received; if this function == NULL the signal will be rejected */
+
 };
 
 typedef struct obj_struct obj_t;
