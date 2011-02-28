@@ -66,7 +66,7 @@ typedef struct cbs_hash1_struct cbs_hash1_t;
 
 #define CBS_OBJ_WRONG(o)	(!o | CBS_WRONG_ID(o) | CBS_WRING_TYPE(o))
 
-
+#define CBS_ID_TO_CBS(idd) (cbs_hash->o[ CBSH1(idd) ]->o[CBSH2(idd)])
 #define CBS_OBJ_TO_CBS(j) (cbs_hash->o[ CBSH1(j->id) ]->o[CBSH2(j->id)])
 
 
@@ -81,5 +81,10 @@ int 	cbs_remove_obj(obj_t * o);
 long 	cbs_hash_amount();
 int 	cbs_set_employee(obj_t * m, obj_t * e);
 
+osig_t * cbs_sig_new(id_t dst, id_t src, signum_e signum, void * data);
+obj_e cbs_signal_free(osig_t * ps_sig);
+obj_e cbs_send_sig_id(id_t dst, id_t src, signum_e signum, void * data);
+obj_e cbs_signal_reply(osig_t * ps_orig_sig, signum_e signum, void * data);
+osig_t * cbs_get_signal(obj_t * o);
 
 #endif /*  _cbs_s_dkfjhgdkj32jjhkjh9k7j8h9kjhkj */
