@@ -61,6 +61,7 @@ obj_e obj_init(obj_t * ps_o, type_e t)
 	olock_lock(&ps_o->lock);
 	ps_o->type = t;
 	ps_o->id = cbs_get_id();
+	ps_o->q_sig = que_create();
 	olock_unlock(&ps_o->lock);
 	if (!ps_o->id) 
 	{
@@ -81,6 +82,7 @@ obj_e obj_finish(obj_t * ps_o)
 	olock_lock(&ps_o->lock);
 	cbs_return_id(ps_o);
 	ps_o->type = OBJ_TYPE_NONE;
+	que_destroy((que_t *) ps_o->q_sig);
 	olock_unlock(&ps_o->lock);
 	olock_destroy(&ps_o->lock);
 	return(OBJ_E_OK);
