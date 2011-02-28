@@ -16,6 +16,7 @@ que_t * que_create(void)
 	que_t * q = malloc(sizeof(que_t));
 	if(NULL == q) return(NULL);
 	bzero(q, sizeof(que_t));
+	olock_init(&q->lock);
 	return(q);
 }
 
@@ -25,13 +26,16 @@ int que_destroy(que_t *q)
 	node_t * n;
 	if(NULL == q) return(-1);
 
+	olock_lock(&q->lock);
+
 	while (q->list)
 	{
 		n = q->list;
 		q->list = q->list->next;
 		free(n);		
 	}
-
+	
+	olock_destroy(&q->lock);
 	free(q);
 	return(0);
 }
@@ -254,7 +258,10 @@ char * que_remove_node_by_data(que_t * q,  char * pc_data)
 	node_t * prev;
 	node_t * node;
 	char * pc_ret_data;
-	prev = node = q->list;
+
+	node = q->list;
+	prev = q->list;
+
 	if (0 == q->amount)
 	{
 		/*		LOG("empty que or no data : %p %d \n", data, q->amount); */
@@ -265,9 +272,22 @@ char * que_remove_node_by_data(que_t * q,  char * pc_data)
 	{
 		if (node->pc_data == pc_data )
 		{
-			prev = node->next;
+			/* Found */
+			if (q->list == node) 
+			{
+				q->list = node->next;
+				if (q->tail == node) q->tail = q->list;
+			}
+			else 
+			{
+				prev = node->next;
+				if (q->tail == node) q->tail = prev;
+			}
+
 			pc_ret_data = node->pc_data;
+
 			free(node);
+			q->amount--;
 			return(pc_ret_data);
 		}
 
