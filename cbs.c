@@ -4,14 +4,17 @@
 
 /* Pointer to CBS hash tables   */
 static cbs_hash1_t 	*   cbs_hash = NULL;
-olock_t 				cbs_hash_lock;
+static olock_t 				cbs_hash_lock;
 static que_t * 			q_id;
 static id_t 			id_current = 1;
-olock_t 				id_lock;
+
+static que_t *			q_notification;
+static pthread_cond_t 			q_notification_cv;
+static pthread_t 					q_notification_pid;
+static olock_t 				id_lock;
 
 
-
-/********************************** file opearions ***********************************/
+/********************************** file operations ***********************************/
 
 
 static cbs_hash1_t * cbs_hash1_new()
@@ -103,7 +106,45 @@ static int obj_cbs_o_free(obj_t * o)
 }
 
 
-/********************************** end file opearions ***********************************/
+/********************************** end file operations ***********************************/
+
+
+static void * cbs_notification_thread(void * data)
+{
+	osig_t * 	ps_sig;
+	cbs_o * 	ps_cbs;
+
+	printf("Thread notification: i am alive\n");
+
+	while(1)
+	{
+		olock_lock(&q_notification->lock);
+		//printf("Thread notification: going to sleep\n");
+		pthread_cond_wait(&q_notification_cv, &q_notification->lock);
+		olock_unlock(&q_notification->lock);
+		//printf("Thread notification: i woke up\n");
+		do
+		{
+			/* This que keeps only pointers to real objects. */
+			/* It doesn't allocate or free think. */
+
+			ps_sig = (osig_t *) node_extract_data(q_notification);
+			//printf("Thread notification: extracted up\n");
+			if (!ps_sig) continue;
+			ps_cbs = CBS_ID_TO_CBS(ps_sig->dst);
+			//printf("Thread notification: got cbsp\n");
+			if(!ps_cbs) continue;
+			//printf("Thread notification: call handler\n");
+			ps_cbs->o->sighandler(ps_sig);
+			//printf("Thread notification: finished\n");
+		} while (ps_sig);
+
+		
+	}
+
+	printf("Thread notification: exit\n");
+	return(NULL);
+}
 
 
 int cbs_init(void)
@@ -112,6 +153,9 @@ int cbs_init(void)
 	obj_f * pf_hash1;
 	obj_f * pf_hash2;
 	obj_f * pf_cbs_o;
+
+	pthread_attr_t attr;
+
 
 	pf_hash1 = calloc(1, sizeof(obj_f));
 	pf_hash1->new = obj_hash1_new;
@@ -141,7 +185,29 @@ int cbs_init(void)
 		return(-1);
 	}
 
+
+	q_notification = que_create();
+
+	if (!q_notification)
+	{
+		que_destroy(q_id);
+		free(cbs_hash);
+		return(-1);
+	}
+
 	olock_init(&id_lock);
+	pthread_cond_init (&q_notification_cv, NULL);
+
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+	if(pthread_create(&q_notification_pid, &attr, cbs_notification_thread, NULL))
+		printf("Can't start notification thread\n");
+	pthread_detach(q_notification_pid);
+	pthread_attr_destroy(&attr);
+
+	sleep(1);
+
     return(0);
 }
 
@@ -178,12 +244,16 @@ int cbs_destroy()
 {
 	if(!cbs_hash) return(0);
 
+	pthread_cancel(q_notification_pid);
+
 	olock_lock(&id_lock);
 
 	que_destroy_data(q_id);
+	que_destroy_data(q_notification);
 	cbs_hash_destroy();
 
 	olock_destroy(&id_lock);
+	pthread_cond_destroy(&q_notification_cv);
 	return(0);
 }
 
@@ -261,6 +331,8 @@ int cbs_insert_obj(obj_t * o)
 
 	if(!cbs_hash) return(-1);
 
+	printf("Inserting: o->%i\n", o->id);
+
 	if(! cbs_hash->o[ CBSH1(o->id) ])
 		cbs_hash->o[ CBSH1(o->id) ] = (cbs_hash2_t *) obj_new(OBJ_TYPE_CBS_HASH2, NULL);
 
@@ -287,6 +359,7 @@ int cbs_insert_obj(obj_t * o)
 	cbs_hash->o[ CBSH1(o->id) ]->amount++;
 	cbs_hash->amount++;
 
+	printf("Inserted: obj->%i\n", cbs_hash->o[ CBSH1(o->id) ]->o[ CBSH2(o->id) ]->o->id);
 	olock_unlock(&cbs_hash->o[ CBSH1(o->id) ]->t.lock);
 	olock_unlock(&cbs_hash->t.lock);
 	
@@ -385,9 +458,106 @@ int cbs_set_employee(obj_t * m, obj_t * e)
 	que_add_data_to_tail(ps_cbs_m->q_employee, (char *) ps_cbs_e);
 
 	return(0);
+}
+
+
+osig_t * cbs_sig_new(id_t dst, id_t src, signum_e signum, void * data)
+{
+	osig_t * ps_sig;
+	/* Create signal */
+	ps_sig = calloc(1, sizeof(osig_t));
+	if (!ps_sig) return(NULL);
+	olock_init(&ps_sig->lock);
+	
+	ps_sig->dst = dst;
+	ps_sig->src = src;
+	ps_sig->signum = signum;
+	ps_sig->data = data;
+
+	return(ps_sig);
+}
+
+obj_e cbs_signal_free(osig_t * ps_sig)
+{
+	cbs_o * ps_cbs;
+	if(!ps_sig) return(OBJ_E_ARG);
+
+	olock_lock(&ps_sig->lock);
+
+	/* Try to find and delete if from que of dst */
+
+	ps_cbs = CBS_ID_TO_CBS(ps_sig->dst);
+
+	if(ps_cbs && ps_cbs->o->q_sig->amount > 0 )
+		que_remove_node_by_data( (que_t *) ps_cbs->o->q_sig, (char *) ps_sig);
+
+	olock_destroy(&ps_sig->lock);
+	free(ps_sig);
+
+	return(OBJ_E_OK);
+}
 
 
 
+obj_e cbs_send_sig_id(id_t src, id_t dst, signum_e signum, void * data)
+{
+	cbs_o * ps_cbs_dst;
+	osig_t * ps_sig;
+
+	ps_cbs_dst = CBS_ID_TO_CBS(dst);
+	if(!ps_cbs_dst) return(OBJ_E_INDEX);
+
+	ps_sig = cbs_sig_new(dst, src, signum, data);
+	if (!ps_sig) return(OBJ_E_MEMORY);
+
+	if ( NULL == que_add_data_to_tail( (que_t *) ps_cbs_dst->o->q_sig, (char *) ps_sig) )
+	{
+		free(ps_sig);
+		return(OBJ_E_UNKNOWN);
+	}
+
+	printf("Added message to que of %i, amount of sig_handler: %d\n\n", ps_cbs_dst->o->id, ps_cbs_dst->o->q_sig->amount);
+
+	olock_lock(&q_notification->lock);
+	que_add_data_to_tail(q_notification, (char * ) ps_sig);
+	pthread_cond_signal(&q_notification_cv);
+	olock_unlock(&q_notification->lock);
+	
+	return(0);
+}
+
+
+obj_e cbs_signal_reply(osig_t * ps_orig_sig, signum_e signum, void * data)
+{
+	cbs_o * ps_cbs;
+	id_t tmp;
+	
+
+	/* Reuse the same signal structure. Exchange src <-> dst */
+	tmp 				= ps_orig_sig->dst;
+	ps_orig_sig->dst 	= ps_orig_sig->src;
+	ps_orig_sig->src 	= tmp;
+	ps_orig_sig->signum = signum;
+	ps_orig_sig->data 	= data;
+	
+	/* Remove it from object's que if it is there */	
+	ps_cbs = CBS_ID_TO_CBS(tmp);
+
+	que_remove_node_by_data(ps_cbs->o->q_sig, ps_orig_sig);
+
+	obj_e e =	cbs_send_sig_id(ps_orig_sig->src, ps_orig_sig->dst, signum, data);
+	if(OBJ_E_OK != e) return(e);
+
+	return(OBJ_E_OK);
+}
+
+
+osig_t * cbs_get_signal(obj_t * o)
+{
+	osig_t * ps_sig;
+
+	ps_sig = (osig_t *) node_extract_data((que_t *) o->q_sig);
+	return(ps_sig);
 }
 
 
