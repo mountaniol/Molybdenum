@@ -24,6 +24,8 @@ void sig_hand_2(osig_t * ps_s)
 }
 
 
+#define ASIZE 1024
+
 int main()
 {
 	obj_t o;
@@ -33,7 +35,7 @@ int main()
 
 	obj_e e;
 	obj_t * m;
-	obj_t * oo[2];
+	obj_t * oo[ASIZE];
 	id_t id_drc;
 	id_t id_dst;
 
@@ -49,7 +51,7 @@ int main()
 
 	m->sighandler = sig_hand_2;
 
-	for (i = 0 ; i < 2 ; i++)
+	for (i = 0 ; i < ASIZE ; i++)
 	{
 		oo[i] = obj_new(OBJ_TYPE_DIR, NULL);
 		e = obj_err(oo[i]);
@@ -67,13 +69,18 @@ int main()
 	printf("Hash amount: %ld\n", cbs_hash_amount());
 	printf("Sending sig from %i to %i\n", m->id, oo[0]->id);
 
-	cbs_send_sig_id(m->id, oo[0]->id, OBJ_S_USER1, "Test message");
+	for (i = 0; i < ASIZE ; i++)
+	{
+		cbs_send_sig_id(m->id, oo[i]->id, OBJ_S_USER1, "Test message");
+	}
+
+	usleep(10000);
 
 	printf("Object %i signal que amount is: %d\n", oo[0]->id, oo[0]->q_sig->amount);
 
-	sleep(2);
+	//sleep(2);
 
-	for (i = 0 ; i < 2 ; i++)
+	for (i = 0 ; i < ASIZE ; i++)
 		obj_free(oo[i]);
 
 	obj_free(m);

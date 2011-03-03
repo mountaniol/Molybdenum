@@ -44,5 +44,6 @@ enum obj_operation_e
 };
 
 typedef unsigned int id_t;
+typedef unsigned long int ticket_t;
 
 #endif /* _otypes_h_dshjg23hgjh5jk4634j4 */

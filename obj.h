@@ -22,6 +22,7 @@ struct obj_struct
 {
 	type_e 		type; 								/* Object type 		*/
     id_t        id;									/* Object id: uniq 	*/
+	ticket_t 	ticket;								/* Unical ticket. id + ticket both identify the object */
     olock_t     lock;								/* Object lock 		*/
 	obj_e		error;								/* Last error, used in misc. situations	*/
 	void * 		data;								/* A pointer to a data.	*/

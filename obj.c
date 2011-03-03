@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <sys/time.h>
 
 #include "obj.h"
 #include "d.h"
@@ -52,6 +53,16 @@ int obj_f_install(type_e t, obj_f * ps_f)
 }
 
 
+static obj_e obj_init_ticket(obj_t * ps_o)
+{
+	struct timeval s_tv;
+	gettimeofday(&s_tv, NULL);
+
+	ps_o->ticket = ( (s_tv.tv_sec << (s_tv.tv_usec & 0xff) ) ^ ( s_tv.tv_usec) );
+	return OBJ_E_OK;
+}
+
+
 obj_e obj_init(obj_t * ps_o, type_e t)
 {
 	/* If the object not registred - return error */
@@ -60,6 +71,7 @@ obj_e obj_init(obj_t * ps_o, type_e t)
 	olock_init(&ps_o->lock);
 	olock_lock(&ps_o->lock);
 	ps_o->type = t;
+	obj_init_ticket(ps_o);
 	ps_o->id = cbs_get_id();
 	ps_o->q_sig = que_create();
 	olock_unlock(&ps_o->lock);

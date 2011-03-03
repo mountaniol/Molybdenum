@@ -20,6 +20,8 @@ struct obj_signal
 	signum_e	 	signum;
 	id_t			src;
 	id_t			dst;
+	ticket_t 		ticket_src;
+	ticket_t 		ticket_dst;
 	olock_t 		lock;
 	void * 			data;
 };
