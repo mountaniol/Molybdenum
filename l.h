@@ -36,15 +36,17 @@ int 		que_destroy(que_t *);
 int 		que_destroy_data(que_t *q);
 int 		que_delete_nodes_and_data(que_t *q);
 char * 		que_remove_node_by_data(que_t * q,  char * pc_data);
-node_t * 	node_create(void);
-node_t * 	node_create_data(char * pc_data);
-node_t * 	node_extract(que_t *);
-char * 		node_extract_data(que_t * q);
-int 		que_add_node(que_t *, node_t *);
+node_t * 	que_node_create(void);
+node_t * 	que_create_node_with_data(char * pc_data);
+node_t * 	que_extract(que_t *);
+char * 		que_extract_data(que_t * q);
+char * 		que_extract_data_r(que_t * q); /* thread safe version */
+int 		que_push(que_t *, node_t *);
 int 		que_add_node_to_tail(que_t *q, node_t *n);
 
-node_t * 	que_add_data(que_t *, char *);
+node_t * 	que_push_data(que_t *, char *);
 node_t * 	que_add_data_to_tail(que_t *, char * );
+node_t * 	que_add_data_to_tail_r(que_t *q, char * d); /* thread safe version */
 int 		que_amount(que_t *);
 node_t * 	que_find_node(que_t * q,  int i_data, compare_t);
 

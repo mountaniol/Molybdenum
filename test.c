@@ -10,9 +10,13 @@
 void sig_hand_1(osig_t * ps_s)
 {
 	char * message = (char *) ps_s->data;
+	obj_e e;
 
 	printf("I got message %s from %i\n", ps_s->data, ps_s->src);
-	cbs_signal_reply(ps_s, ps_s->signum, "Thank you, bobo!");
+	do
+	{
+		e = cbs_signal_reply(ps_s, ps_s->signum, "Thank you, bobo!");
+	} while (e != OBJ_E_OK);
 }
 
 void sig_hand_2(osig_t * ps_s)
@@ -74,7 +78,7 @@ int main()
 		cbs_send_sig_id(m->id, oo[i]->id, OBJ_S_USER1, "Test message");
 	}
 
-	usleep(10000);
+	usleep(1000000);
 
 	printf("Object %i signal que amount is: %d\n", oo[0]->id, oo[0]->q_sig->amount);
 
