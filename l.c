@@ -11,6 +11,7 @@
 #define ENTRY() do{}while(0)
 
 
+/* New que */
 que_t * que_create(void)
 {
 	que_t * q = malloc(sizeof(que_t));
@@ -21,6 +22,7 @@ que_t * que_create(void)
 }
 
 
+/* Destroys the que and the nodes; Doesn't free data */
 int que_destroy(que_t *q)
 {
 	node_t * n;
@@ -41,6 +43,7 @@ int que_destroy(que_t *q)
 }
 
 
+/* Run on the que and free data of every node; Doesn't remove the nodes and que */
 int que_destroy_data(que_t *q)
 {
 	node_t * n;
@@ -59,6 +62,7 @@ int que_destroy_data(que_t *q)
 }
 
 
+/* Delete all nodes and free data of every node; But doesn't delete que itself  */
 int que_delete_nodes_and_data(que_t *q)
 {
 	node_t * n;
@@ -78,10 +82,10 @@ int que_delete_nodes_and_data(que_t *q)
 
 
 
-node_t * 	node_create_data(char * pc_data)
+node_t * 	que_create_node_with_data(char * pc_data)
 {
 	node_t * ps_node;
-	ps_node = node_create();
+	ps_node = que_node_create();
 	if (! ps_node) return(NULL);
 	ps_node->pc_data = pc_data;
 	return(ps_node);
@@ -89,7 +93,7 @@ node_t * 	node_create_data(char * pc_data)
 
 
 
-node_t * 	node_create(void)
+node_t * 	que_node_create(void)
 {
 	node_t * n = malloc(sizeof(node_t));
 	if(NULL == n) return(NULL);
@@ -98,7 +102,7 @@ node_t * 	node_create(void)
 }
 
 
-node_t * 	node_extract(que_t * q)
+node_t * 	que_extract(que_t * q)
 {
 	node_t * n;
 
@@ -123,7 +127,7 @@ node_t * 	node_extract(que_t * q)
 }
 
 
-char * 	node_extract_data(que_t * q)
+char * 	que_extract_data(que_t * q)
 {
 	node_t * n;
 	char * d;
@@ -149,10 +153,18 @@ char * 	node_extract_data(que_t * q)
 }
 
 
+char * 	que_extract_data_r(que_t * q)
+{
+	char * pc_data;
+	olock_lock(&q->lock);
+	pc_data = que_extract_data(q);
+	olock_unlock(&q->lock);
+	return(pc_data);
+}
 
 node_t * que_add_data_to_tail(que_t *q, char * d)
 {
-	node_t * ps_node = node_create_data(d);
+	node_t * ps_node = que_create_node_with_data(d);
 
 	if (! ps_node) return(NULL);
 
@@ -161,18 +173,29 @@ node_t * que_add_data_to_tail(que_t *q, char * d)
 }
 
 
-node_t * que_add_data(que_t *q, char * d)
+node_t * que_add_data_to_tail_r(que_t *q, char * d)
 {
-	node_t * ps_node = node_create_data(d);
+	node_t * ps_node;
 
-	if (! ps_node) return(NULL);
-
-	que_add_node(q, ps_node);
+	olock_lock(&q->lock);
+	ps_node = que_add_data_to_tail(q, d);
+	olock_unlock(&q->lock);
 	return(ps_node);
 }
 
 
-int que_add_node(que_t *q, node_t *n)
+node_t * que_push_data(que_t *q, char * d)
+{
+	node_t * ps_node = que_create_node_with_data(d);
+
+	if (! ps_node) return(NULL);
+
+	que_push(q, ps_node);
+	return(ps_node);
+}
+
+
+int que_push(que_t *q, node_t *n)
 {
 	if (NULL == q || n == NULL) 
 	{
@@ -207,7 +230,7 @@ int que_add_node_to_tail(que_t *q, node_t *n)
 
 
 	if (NULL == q->tail) 
-		return que_add_node(q,n);
+		return que_push(q,n);
 
 	q->tail->next = n;
 	n->next = NULL;
@@ -312,7 +335,7 @@ static que_t * que_dup(que_t * ps_src)
 		ps_node = ps_src->list;
 		while(ps_node)
 		{
-			que_add_node(ps_dst, (node_t *) obj_dup( (obj_t *) ps_node));
+			que_push(ps_dst, (node_t *) obj_dup( (obj_t *) ps_node));
 			ps_node = ps_node->next;
 		}
 	}

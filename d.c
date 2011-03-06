@@ -431,7 +431,7 @@ que_t * dir_t_scan_to_que(char *dir_name)
 		memcpy((char *) ps_entry->name, (char *) f->d_name, f->d_reclen);
 		ps_entry->type = f->d_type;
 		ps_entry->len = f->d_reclen;
-		que_add_data(q, (char *) ps_entry);
+		que_push_data(q, (char *) ps_entry);
 		
 	}
 
@@ -491,7 +491,7 @@ que_t * dir_t_scan_files_only_to_que(char *dir_name)
 		memcpy (&ps_entry->s_st, &st, sizeof(struct stat));
 		ps_entry->type = f->d_type;
 		ps_entry->len = f->d_reclen;
-		que_add_data(q, (char *) ps_entry);
+		que_push_data(q, (char *) ps_entry);
 	}
 
 	closedir(d);
@@ -559,7 +559,7 @@ dir_t * dir_t_scan2(char *dir_name)
 
 	while(que_amount(q) > 0)
 	{
-		pc_entry = node_extract_data(q);
+		pc_entry = que_extract_data(q);
 		memcpy(&(d->entry[d->amount++]), pc_entry, sizeof(entry_t));
 		free(pc_entry);
 	}
@@ -598,7 +598,7 @@ dir_t * dir_t_scan_filter(char *dir_name, dfilter_t * ps_filter)
 
 	while(que_amount(q) > 0)
 	{
-		pc_entry = node_extract_data(q);
+		pc_entry = que_extract_data(q);
 
 		if (0 == dfilter_test_entry(ps_filter, (entry_t *) pc_entry) )
 			memcpy(&(d->entry[d->amount++]), pc_entry, sizeof(entry_t));
@@ -693,7 +693,7 @@ dir_t  * dir_t_diff(dir_t * sp_a, dir_t * sp_b)
         e.key = sp_b->entry[i].name;
         hsearch_r(e, FIND, &ep, htab);
         if (!ep)
-            que_add_data(ps_q, (char *) &sp_b->entry[i]);
+            que_push_data(ps_q, (char *) &sp_b->entry[i]);
     }
 
     hdestroy_r(htab);
@@ -708,7 +708,7 @@ dir_t  * dir_t_diff(dir_t * sp_a, dir_t * sp_b)
 
         while(ps_q->amount > 0)
         {
-            ps_entry = (entry_t *) node_extract_data(ps_q);
+            ps_entry = (entry_t *) que_extract_data(ps_q);
             if(!ps_entry)  break;
             memcpy((char *) &sp_result->entry[sp_result->amount++],  (char *) ps_entry, sizeof(entry_t));
         }
@@ -770,7 +770,7 @@ dir_t  * dir_t_same(dir_t * sp_a, dir_t * sp_b)
         e.key = sp_b->entry[i].name;
         hsearch_r(e, FIND, &ep, htab);
         if (ep)
-            que_add_data(ps_q, (char *) &sp_b->entry[i]);
+            que_push_data(ps_q, (char *) &sp_b->entry[i]);
     }
 
     hdestroy_r(htab);
@@ -785,7 +785,7 @@ dir_t  * dir_t_same(dir_t * sp_a, dir_t * sp_b)
 
         while(ps_q->amount > 0)
         {
-            ps_entry = (entry_t *) node_extract_data(ps_q);
+            ps_entry = (entry_t *) que_extract_data(ps_q);
             if(!ps_entry)  break;
             memcpy((char *) &sp_result->entry[sp_result->amount++],  (char *) ps_entry, sizeof(entry_t));
         }

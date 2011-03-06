@@ -220,7 +220,7 @@ int watch_obj(owatch_t *ps_w, obj_t * ps_o, int i_rescan)
 {
     obj_holder_t * ps_holder = objholder_new_from_obj_t(ps_o);
 
-    que_add_data(ps_w->q_watch, (char *) ps_holder);
+    que_push_data(ps_w->q_watch, (char *) ps_holder);
     return(0);
 }
 

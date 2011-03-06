@@ -1,18 +1,22 @@
+#include <pthread.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include "cbs.h"
 
 
 /* Pointer to CBS hash tables   */
 static cbs_hash1_t 	*   	cbs_hash = NULL;
-static olock_t 				cbs_hash_lock;
 static que_t * 				q_id;
 static id_t 				id_current = 1;
 
 static que_t *				q_notification = NULL;
-static pthread_cond_t 		q_notification_cv;
+static pthread_cond_t 		q_notification_cv = PTHREAD_COND_INITIALIZER;
 static pthread_t 			q_notification_pid;
 static olock_t 				id_lock;
 
+
+#define CBS_LOCK() 		olock_lock(&cbs_hash->t.lock);
+#define CBS_UNLOCK() 	olock_unlock(&cbs_hash->t.lock);
 
 /********************************** file operations ***********************************/
 
@@ -109,16 +113,55 @@ static int obj_cbs_o_free(obj_t * o)
 /********************************** end file operations ***********************************/
 
 
+
+static void * cbs_note_send_thread(void * data)
+{
+	osig_t * ps_sig = (osig_t *) data;
+	cbs_o * ps_cbs;
+
+	CBS_LOCK();
+	ps_cbs = CBS_ID_TO_CBS(ps_sig->dst);
+	CBS_UNLOCK();
+
+	if(!ps_cbs)
+	{
+		cbs_signal_free(ps_sig);
+		return(NULL);
+	}
+
+	/* If the ticket is the same then send the signal. */
+	if(ps_sig->ticket_dst == ps_cbs->o->ticket)
+	{
+		ps_cbs->o->sighandler(ps_sig);
+	}
+	/* Wrong ticket, free signal */
+	else
+	{
+		printf("Wrong ticket: in signal %X, in dst object %X\n", ps_sig->ticket_dst, ps_cbs->o->ticket);	
+		cbs_signal_free(ps_sig);
+	}
+
+	return(NULL);
+}
+
+
+
 static void * cbs_notification_thread(void * data)
 {
 	osig_t * 	ps_sig;
 	cbs_o * 	ps_cbs;
 
+	pthread_attr_t pt_attr;
+	pthread_t pid;
+
+	pthread_attr_init(&pt_attr);
+	pthread_attr_setstacksize(&pt_attr, 32768);
+
 	/* printf("Thread notification: i am alive\n"); */
 
 	while(1)
 	{
-#if 0		
+#if 1
 		olock_lock(&q_notification->lock);
 		printf("Thread notification: going to sleep\n");
 		pthread_cond_wait(&q_notification_cv, &q_notification->lock);
@@ -131,29 +174,35 @@ static void * cbs_notification_thread(void * data)
 			/* This que keeps only pointers to real objects. */
 			/* It doesn't allocate or free think. */
 
-			ps_sig = (osig_t *) node_extract_data(q_notification);
+			
+			ps_sig = (osig_t *) que_extract_data_r(q_notification);
+
 			/* printf("Thread notification: extracted up\n"); */
-			if (!ps_sig) continue;
+			if (ps_sig)	 pthread_create(&pid, &pt_attr, cbs_note_send_thread, (void *) ps_sig);	
+#if 0			
+			CBS_LOCK();
 			ps_cbs = CBS_ID_TO_CBS(ps_sig->dst);
+			CBS_UNLOCK();
 			/* printf("Thread notification: got cbsp\n"); */
-			if(!ps_cbs) continue;
+			if ( !ps_cbs ) continue;
 			/* printf("Thread notification: call handler\n"); */
 
 			/* If the ticket is same - send the signal. */
-			if(ps_sig->ticket_dst == ps_cbs->o->ticket)
+			if ( ps_sig->ticket_dst == ps_cbs->o->ticket )
 			{
 				ps_cbs->o->sighandler(ps_sig);
 			}
 			/* Wrong ticket, free signal */
 			else
 			{
-				printf("Wrong ticket: in signal %X, in dst object %X\n", ps_sig->ticket_dst, ps_cbs->o->ticket);	
+				printf("Wrong ticket: in signal %X, in dst object %X\n", ps_sig->ticket_dst, ps_cbs->o->ticket);    
 				cbs_signal_free(ps_sig);
 			}
+#endif			
 			/* printf("Thread notification: finished\n"); */
 		} while (ps_sig);
 		
-		usleep(100);		
+		// usleep(50);		
 	}
 
 	printf("Thread notification: exit\n");
@@ -210,7 +259,6 @@ int cbs_init(void)
 	}
 
 	olock_init(&id_lock);
-	pthread_cond_init (&q_notification_cv, NULL);
 
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
@@ -294,7 +342,7 @@ id_t cbs_get_id()
 
 	if(!cbs_hash) return(0);
 
-	ps_id = (id_t *) node_extract_data(q_id);
+	ps_id = (id_t *) que_extract_data_r(q_id);
 
 	if(ps_id)
 	{
@@ -326,7 +374,7 @@ int cbs_return_id(obj_t * o)
 	}
 
 	*ps_id = o->id;
-	if(!que_add_data_to_tail(q_id, (char *)  ps_id))
+	if(!que_add_data_to_tail_r(q_id, (char *)  ps_id))
 	{
 		free(ps_id);
 		o->error = OBJ_W_AGAIN;
@@ -346,6 +394,7 @@ int cbs_insert_obj(obj_t * o)
 	if(!cbs_hash) return(-1);
 
 /* 	printf("Inserting: o->%i\n", o->id); */
+	CBS_LOCK();
 
 	if(! cbs_hash->o[ CBSH1(o->id) ])
 		cbs_hash->o[ CBSH1(o->id) ] = (cbs_hash2_t *) obj_new(OBJ_TYPE_CBS_HASH2, NULL);
@@ -360,13 +409,12 @@ int cbs_insert_obj(obj_t * o)
 		{
 
 			obj_free(&cbs_hash->o[ CBSH1(o->id) ]->t);
-			olock_unlock(&cbs_hash->t.lock);
+			CBS_UNLOCK();
 		}
 		return(-1);
 	}
 
 
-	olock_lock(&cbs_hash->t.lock);
 	olock_lock(&cbs_hash->o[ CBSH1(o->id) ]->t.lock);
 
 	cbs_hash->o[ CBSH1(o->id) ]->o[ CBSH2(o->id) ] = ps_cbs_o;
@@ -375,7 +423,7 @@ int cbs_insert_obj(obj_t * o)
 
 /* 	printf("Inserted: obj->%i\n", cbs_hash->o[ CBSH1(o->id) ]->o[ CBSH2(o->id) ]->o->id); */
 	olock_unlock(&cbs_hash->o[ CBSH1(o->id) ]->t.lock);
-	olock_unlock(&cbs_hash->t.lock);
+	CBS_UNLOCK();
 	
 	return(0);
 }
@@ -397,20 +445,31 @@ int cbs_remove_obj(obj_t * o)
 
 	if(CBS_OBJ_WRONG(o) ) return(OBJ_E_ID);
 	if (!cbs_hash) return(OBJ_E_INDEX);
-	if (!cbs_hash->o[ CBSH1(o->id) ]) return(OBJ_E_INDEX);
-	if (!cbs_hash->o[ CBSH1(o->id) ]->o[CBSH2(o->id)]) return(OBJ_E_INDEX);
+
+	CBS_LOCK();
+
+	if (!cbs_hash->o[ CBSH1(o->id) ]) 
+	{
+		CBS_UNLOCK();
+		return(OBJ_E_INDEX);
+	}
+
+	if (!cbs_hash->o[ CBSH1(o->id) ]->o[CBSH2(o->id)]) 
+	{
+		CBS_UNLOCK();
+		return(OBJ_E_INDEX);
+	}
 
 	/* Get node of this object */
 	ps_cbs_rm = (cbs_o *) CBS_OBJ_TO_CBS(o);
 
-	olock_lock(&cbs_hash->t.lock);
 	olock_lock(&cbs_hash->o[ CBSH1(o->id) ]->t.lock);
 
 	/* Remove it from all employees */
 	do
 	{
 		/* */
-		ps_cbs_tmp = (cbs_o *) node_extract_data(ps_cbs_rm->q_employee);
+		ps_cbs_tmp = (cbs_o *) que_extract_data_r(ps_cbs_rm->q_employee);
 		if (ps_cbs_tmp)	ps_cbs_tmp->manager = NULL;
 
 	} while (ps_cbs_tmp);
@@ -436,7 +495,7 @@ int cbs_remove_obj(obj_t * o)
 	}
 		
 	if (cbs_hash->o[ CBSH1(o->id) ]) olock_unlock(&cbs_hash->o[ CBSH1(o->id) ]->t.lock);
-	olock_unlock(&cbs_hash->t.lock);
+	CBS_UNLOCK();
 	
 	return(0);
 }
@@ -448,8 +507,7 @@ long cbs_hash_amount()
 }
 
 
-
-/* Set m as manager of e (if no other manager) */
+/* Set m as the manager of e (if no other manager) */
 /* Set e as employee of m */
 
 int cbs_set_employee(obj_t * m, obj_t * e)
@@ -469,7 +527,7 @@ int cbs_set_employee(obj_t * m, obj_t * e)
 	ps_cbs_e->manager = ps_cbs_m;
 
 	/* Set e as an employee */
-	que_add_data_to_tail(ps_cbs_m->q_employee, (char *) ps_cbs_e);
+	que_add_data_to_tail_r(ps_cbs_m->q_employee, (char *) ps_cbs_e);
 
 	return(0);
 }
@@ -479,6 +537,8 @@ osig_t * cbs_sig_new(id_t dst, id_t src, signum_e signum, void * data)
 {
 	osig_t * ps_sig;
 	cbs_o * ps_cbs;
+
+	static int count = 0;
 
 	/* Create signal */
 	ps_sig = calloc(1, sizeof(osig_t));
@@ -496,18 +556,25 @@ osig_t * cbs_sig_new(id_t dst, id_t src, signum_e signum, void * data)
 	/* But what happens if the signal send to an object with ID 25, but the object is already died and there now is another object with ID 25? */
 	/* So id + ticket is an unic identificator, where ID used for fast search an in the cotexts where thr object can't be freed. */
 
+	CBS_LOCK();
 	ps_cbs = CBS_ID_TO_CBS(dst);
+	CBS_UNLOCK();
 	if (!ps_cbs) goto cbs_sig_new_error;
 	ps_sig->ticket_dst = ps_cbs->o->ticket;
 
+	CBS_LOCK();
 	ps_cbs = CBS_ID_TO_CBS(src);
+	CBS_UNLOCK();
 	if (!ps_cbs) goto cbs_sig_new_error;
 	ps_sig->ticket_src = ps_cbs->o->ticket;
+
+	count++;
+	printf("Allocated (%p): emmited by %i count: %d\n", ps_sig, src, count);
 
 	return(ps_sig);
 
 cbs_sig_new_error:
-	/* printf("Error of signal creations\n"); */
+	/* printf("Error of signal creation\n"); */
 	free(ps_sig);
 	return(NULL);
 }
@@ -516,18 +583,25 @@ cbs_sig_new_error:
 obj_e cbs_signal_free(osig_t * ps_sig)
 {
 	cbs_o * ps_cbs;
+	static int count = 0;
 	if(!ps_sig) return(OBJ_E_ARG);
 
 	olock_lock(&ps_sig->lock);
 
 	/* Try to find and delete if from que of dst */
 
+	CBS_LOCK();
 	ps_cbs = CBS_ID_TO_CBS(ps_sig->dst);
+	
 
 	if(ps_cbs && ps_cbs->o->q_sig->amount > 0 )
 		que_remove_node_by_data( (que_t *) ps_cbs->o->q_sig, (char *) ps_sig);
 
 	olock_destroy(&ps_sig->lock);
+	CBS_UNLOCK();
+
+	count++;
+	printf("Freeng (%p): sig emitted by %d count %d\n", ps_sig, ps_sig->src, count);
 	free(ps_sig);
 
 	return(OBJ_E_OK);
@@ -535,33 +609,36 @@ obj_e cbs_signal_free(osig_t * ps_sig)
 
 
 
-obj_e cbs_send_sig_id(id_t src, id_t dst, signum_e signum, void * data)
+obj_e cbs_place_sig(osig_t * ps_s)
 {
 	cbs_o * ps_cbs_dst;
-	osig_t * ps_sig;
 
-	ps_cbs_dst = CBS_ID_TO_CBS(dst);
+	CBS_LOCK();
+	ps_cbs_dst = CBS_ID_TO_CBS(ps_s->dst);
+	CBS_UNLOCK();
+
 	if(!ps_cbs_dst) return(OBJ_E_INDEX);
 
-	ps_sig = cbs_sig_new(dst, src, signum, data);
-	if (!ps_sig) return(OBJ_E_MEMORY);
-
-	if ( NULL == que_add_data_to_tail( (que_t *) ps_cbs_dst->o->q_sig, (char *) ps_sig) )
+	if ( NULL == que_add_data_to_tail_r( (que_t *) ps_cbs_dst->o->q_sig, (char *) ps_s) )
 	{
-		free(ps_sig);
+		free(ps_s);
 		return(OBJ_E_UNKNOWN);
 	}
 
-	printf("Added message to que of %i, amount of sig_handler: %d\n\n", ps_cbs_dst->o->id, ps_cbs_dst->o->q_sig->amount);
-
-	que_add_data_to_tail(q_notification, (char * ) ps_sig);
-	olock_lock(&q_notification->lock);
+	que_add_data_to_tail_r(q_notification, (char * ) ps_s);
 	pthread_cond_signal(&q_notification_cv);
-	olock_unlock(&q_notification->lock);
 
-	printf("cbs_send_sig_id: ready\n");
-	
 	return(0);
+}
+
+
+obj_e cbs_send_sig_id(id_t src, id_t dst, signum_e signum, void * data)
+{
+	osig_t * ps_sig;
+
+	ps_sig = cbs_sig_new(dst, src, signum, data);
+	if (!ps_sig) return(OBJ_E_MEMORY);
+	return(cbs_place_sig(ps_sig));
 }
 
 
@@ -570,7 +647,6 @@ obj_e cbs_signal_reply(osig_t * ps_orig_sig, signum_e signum, void * data)
 	cbs_o * ps_cbs;
 	id_t tmp;
 	ticket_t tmp_ticket;
-	obj_e e;	
 
 	/* Reuse the same signal structure. Exchange src <-> dst */
 	tmp 				= ps_orig_sig->dst;
@@ -586,14 +662,13 @@ obj_e cbs_signal_reply(osig_t * ps_orig_sig, signum_e signum, void * data)
 	ps_orig_sig->data 			= data;
 	
 	/* Remove it from object's que if it is there */	
+	CBS_LOCK();
 	ps_cbs = CBS_ID_TO_CBS(tmp);
+	CBS_UNLOCK();
 
 	que_remove_node_by_data(ps_cbs->o->q_sig, (char *) ps_orig_sig);
 
-	e =	cbs_send_sig_id(ps_orig_sig->src, ps_orig_sig->dst, signum, data);
-	if(OBJ_E_OK != e) return(e);
-
-	return(OBJ_E_OK);
+	return(cbs_place_sig(ps_orig_sig));
 }
 
 
@@ -601,7 +676,7 @@ osig_t * cbs_get_signal(obj_t * o)
 {
 	osig_t * ps_sig;
 
-	ps_sig = (osig_t *) node_extract_data((que_t *) o->q_sig);
+	ps_sig = (osig_t *) que_extract_data_r((que_t *) o->q_sig);
 	return(ps_sig);
 }
 
