@@ -26,7 +26,7 @@ struct obj_struct
     olock_t     lock;								/* Object lock 		*/
 	obj_e		error;								/* Last error, used in misc. situations	*/
 	void * 		data;								/* A pointer to a data.	*/
-	struct que_struct * 	q_sig;								/* Que of signals */
+	struct que_struct * 	q_sig;					/* Que of signals */
 	int			signals;							/* Not null if there a signals in the q_siq */
 	int 		(*sighandler)(osig_t * ps_sig);		/* This function invoked when a signal received; if this function == NULL the signal will be rejected */
 

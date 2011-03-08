@@ -7,9 +7,13 @@
 
 typedef enum object_error
 {
+	/* Warning flags */
 	OBJ_E_OK = 0,			/* Operation completed, no errors */
 	OBJ_W_AGAIN,			/* Try again, returned if the object locked */
 
+	OBJ_W_DIE,				/* Object is in die cond  */
+
+	/* Error flags */
 	OBJ_E_TYPE = 0xFFFF,	/* Asked wrong operation for type */
 	OBJ_E_UNKNOWN, 			/* Returned on obj_init if the object type not registred */
 	OBJ_E_ARG,				/* Wrong argument */

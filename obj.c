@@ -69,12 +69,12 @@ obj_e obj_init(obj_t * ps_o, type_e t)
 	if (!obj_f_array[t]) return( OBJ_E_TYPE );
 
 	olock_init(&ps_o->lock);
-	olock_lock(&ps_o->lock);
+	obj_lock(ps_o);
 	ps_o->type = t;
 	obj_init_ticket(ps_o);
 	ps_o->id = cbs_get_id();
 	ps_o->q_sig = que_create();
-	olock_unlock(&ps_o->lock);
+	obj_unlock(ps_o);
 	if (!ps_o->id) 
 	{
 		ps_o->error = OBJ_E_ID;
@@ -90,12 +90,13 @@ obj_e obj_init(obj_t * ps_o, type_e t)
 obj_e obj_finish(obj_t * ps_o)
 {
 	/* If the object not registred - return error */
+	
+	obj_lock(ps_o);
+	cbs_remove_signals_from_obj(ps_o);
 	cbs_remove_obj(ps_o);
-	olock_lock(&ps_o->lock);
 	cbs_return_id(ps_o);
 	ps_o->type = OBJ_TYPE_NONE;
 	que_destroy((que_t *) ps_o->q_sig);
-	olock_unlock(&ps_o->lock);
 	olock_destroy(&ps_o->lock);
 	return(OBJ_E_OK);
 }
@@ -152,14 +153,16 @@ obj_e obj_reset(obj_t * ps_o)
 
 int obj_lock(obj_t * ps_o)
 {
-	if (ps_o && obj_f_array[ps_o->type]) return(obj_f_array[ps_o->type]->lock(ps_o));
+	/* if (ps_o && obj_f_array[ps_o->type] && obj_f_array[ps_o->type]->lock) return(obj_f_array[ps_o->type]->lock(ps_o));
+	else */ return( olock_lock(&ps_o->lock) );
 	return(1);
 }
 
 
 int obj_unlock(obj_t * ps_o)
 {
-	if (ps_o && obj_f_array[ps_o->type]) return(obj_f_array[ps_o->type]->lock(ps_o));
+	/*if (ps_o && obj_f_array[ps_o->type] && obj_f_array[ps_o->type]->lock) return(obj_f_array[ps_o->type]->lock(ps_o));
+	else */return(olock_unlock(&ps_o->lock));
 	return(1);
 }
 

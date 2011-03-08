@@ -82,9 +82,10 @@ long 	cbs_hash_amount();
 int 	cbs_set_employee(obj_t * m, obj_t * e);
 
 osig_t * cbs_sig_new(id_t dst, id_t src, signum_e signum, void * data);
-obj_e cbs_signal_free(osig_t * ps_sig);
-obj_e cbs_send_sig_id(id_t src, id_t dst, signum_e signum, void * data);
-obj_e cbs_signal_reply(osig_t * ps_orig_sig, signum_e signum, void * data);
+obj_e 	cbs_signal_free(osig_t * ps_sig);
+obj_e 	cbs_remove_signals_from_obj(obj_t * ps_o);
+obj_e 	cbs_send_sig_id(id_t src, id_t dst, signum_e signum, void * data);
+obj_e 	cbs_signal_reply(osig_t * ps_orig_sig, signum_e signum, void * data);
 osig_t * cbs_get_signal(obj_t * o);
 
 #endif /*  _cbs_s_dkfjhgdkj32jjhkjh9k7j8h9kjhkj */

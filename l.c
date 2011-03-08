@@ -28,7 +28,7 @@ int que_destroy(que_t *q)
 	node_t * n;
 	if(NULL == q) return(-1);
 
-	olock_lock(&q->lock);
+	
 
 	while (q->list)
 	{
@@ -37,10 +37,17 @@ int que_destroy(que_t *q)
 		free(n);		
 	}
 	
-	olock_destroy(&q->lock);
 	free(q);
 	return(0);
 }
+
+int que_destroy_r(que_t *q)
+{
+	obj_lock( (obj_t *) q);
+	return que_destroy(q);
+}
+
+
 
 
 /* Run on the que and free data of every node; Doesn't remove the nodes and que */
@@ -156,9 +163,11 @@ char * 	que_extract_data(que_t * q)
 char * 	que_extract_data_r(que_t * q)
 {
 	char * pc_data;
-	olock_lock(&q->lock);
+	obj_lock(q);
+	//olock_lock(&q->lock);
 	pc_data = que_extract_data(q);
-	olock_unlock(&q->lock);
+	//olock_unlock(&q->lock);
+	obj_unlock(q);
 	return(pc_data);
 }
 
@@ -177,9 +186,9 @@ node_t * que_add_data_to_tail_r(que_t *q, char * d)
 {
 	node_t * ps_node;
 
-	olock_lock(&q->lock);
+	obj_lock( (obj_t *) q);
 	ps_node = que_add_data_to_tail(q, d);
-	olock_unlock(&q->lock);
+	obj_unlock( (obj_t *) q);
 	return(ps_node);
 }
 
