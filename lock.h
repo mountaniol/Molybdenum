@@ -8,6 +8,7 @@
 typedef pthread_mutex_t olock_t;
 
 int olock_lock(olock_t *lock);
+int olock_trylock(olock_t *lock);
 int olock_unlock(olock_t *lock);
 int olock_init(olock_t * lock);
 int olock_destroy(olock_t * lock);

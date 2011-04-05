@@ -5,7 +5,6 @@
 #include "e.h"
 #include "lock.h"
 #include "signals.h"
-#include "que_s.h"
 
 /* Abstraction level. */
 /* obj_t is container which holds other structures */

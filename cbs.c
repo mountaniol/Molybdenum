@@ -133,13 +133,24 @@ static void * cbs_note_send_thread(void * data)
 
 	CBS_LOCK();
 	ps_cbs = cbs_id_to_cbs(ps_sig->dst);
-	CBS_UNLOCK();
-
 	if(!ps_cbs)
 	{
 		cbs_signal_free(ps_sig);
+		CBS_UNLOCK();
 		return(NULL);
 	}
+
+	if (olock_trylock(&ps_cbs->o->lock))
+	{
+		/* Rescedule and exit */
+		cbs_place_sig(ps_sig);
+		CBS_UNLOCK();
+		return(NULL);
+	}
+
+	/* All right, the object present and is locked */
+	CBS_UNLOCK();
+
 
 	/* If the ticket is the same then send the signal. */
 	if(ps_sig->ticket_dst == ps_cbs->o->ticket)
@@ -153,6 +164,7 @@ static void * cbs_note_send_thread(void * data)
 		cbs_signal_free(ps_sig);
 	}
 
+	olock_unlock(&ps_cbs->o->lock);
 	return(NULL);
 }
 
@@ -179,7 +191,7 @@ static void * cbs_notification_thread(void * data)
 		obj_unlock( (obj_t *) q_notification);
 #endif		
 
-		if ( ((obj_t *)cbs_hash)->error == OBJ_W_DIE )
+		if ( !cbs_hash || ((obj_t *)cbs_hash)->error == OBJ_W_DIE )
 		{
 			pthread_exit(NULL);
 		}
@@ -645,7 +657,7 @@ obj_e cbs_signal_free(osig_t * ps_sig)
 
 
 
-obj_e cbs_place_sig(osig_t * ps_s)
+static obj_e cbs_place_sig(osig_t * ps_s)
 {
 	cbs_o * ps_cbs_dst;
 
@@ -671,10 +683,30 @@ obj_e cbs_place_sig(osig_t * ps_s)
 obj_e cbs_send_sig_id(id_t src, id_t dst, signum_e signum, void * data)
 {
 	osig_t * ps_sig;
+	obj_e e;
+	cbs_o * ps_cbs = cbs_id_to_cbs(dst);
+
+	if(!ps_cbs)
+	{
+		return(OBJ_E_ID);
+	}
+
+	if(olock_trylock(&ps_cbs->o->lock))
+		return(OBJ_W_AGAIN);
+
+	/* Find dest. object and lock it */
 
 	ps_sig = cbs_sig_new(dst, src, signum, data);
-	if (!ps_sig) return(OBJ_E_MEMORY);
-	return(cbs_place_sig(ps_sig));
+	if (!ps_sig)
+	{
+		olock_unlock(&ps_cbs->o->lock);
+		return(OBJ_E_MEMORY);
+	}
+
+	e = cbs_place_sig(ps_sig);
+	olock_unlock(&ps_cbs->o->lock);
+
+	return(e);
 }
 
 

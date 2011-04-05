@@ -78,7 +78,7 @@ int main()
 		cbs_send_sig_id(m->id, oo[i]->id, OBJ_S_USER1, "Test message");
 	}
 
-	usleep(1000000);
+	usleep(100000);
 
 	printf("Object %i signal que amount is: %d\n", oo[0]->id, oo[0]->q_sig->amount);
 

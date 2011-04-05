@@ -88,4 +88,6 @@ obj_e 	cbs_send_sig_id(id_t src, id_t dst, signum_e signum, void * data);
 obj_e 	cbs_signal_reply(osig_t * ps_orig_sig, signum_e signum, void * data);
 osig_t * cbs_get_signal(obj_t * o);
 
+static obj_e 	cbs_place_sig(osig_t * ps_s);
+
 #endif /*  _cbs_s_dkfjhgdkj32jjhkjh9k7j8h9kjhkj */

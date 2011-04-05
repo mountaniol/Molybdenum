@@ -6,6 +6,10 @@ int olock_lock(olock_t *lock)
     return(pthread_mutex_lock(lock));
 }
 
+int olock_trylock(olock_t *lock)
+{
+    return(pthread_mutex_trylock(lock));
+}
 
 int olock_unlock(olock_t *lock)
 {
